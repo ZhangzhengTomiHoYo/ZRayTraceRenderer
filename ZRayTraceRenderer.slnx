@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ZRayTraceRenderer/ZRayTraceRenderer.vcxproj" Id="003af870-5292-48b0-8886-316c7815c4fc" />
+</Solution>
