@@ -71,11 +71,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\zhang_GI\source\externals\minifb\include;C:\Users\zhang_GI\source\externals\GLM\glm;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\zhang_GI\source\externals\minifb\include;C:\Users\zhang_GI\source\externals\GLM;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\zhang_GI\source\externals\minifb\build\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\zhang_GI\source\externals\minifb\include;C:\Users\zhang_GI\source\externals\GLM\glm;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\zhang_GI\source\externals\minifb\include;C:\Users\zhang_GI\source\externals\GLM;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\zhang_GI\source\externals\minifb\build\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -150,6 +150,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
