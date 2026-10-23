@@ -8,7 +8,21 @@
 #include "Common.h"
 
 Renderer::Renderer() {} ;
-Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeight(height) {};
+
+Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeight(height) 
+{
+    mCamera.Init(
+        Vector3f(10.0f, 0.0f, 1.0f),
+        Vector3f(10.0f, 10.0f, 30.0f),
+        Vector3f(0.0f, 1.0f, 0.0f),
+        glm::radians(60.0f),
+        0.1f,
+        1000.0f,
+        width,
+        height
+    );
+};
+
 Renderer::~Renderer() {};
 
 void Renderer::Run()
@@ -45,11 +59,15 @@ void Renderer::Run()
 
 Color Renderer::RenderPixel(int x, int y)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    Color color;
-    color.r = static_cast<float>(x) / mViewportWidth;
-    color.g = static_cast<float>(y) / mViewportHeight;
-    color.b = 0.0f;
+    Ray ray = mCamera.GetRay(x, y);
+    Vector3f d = ray.d;
+    Color color = d * 0.5f + 0.5f;
+
+    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    //Color color;
+    //color.r = static_cast<float>(x) / mViewportWidth;
+    //color.g = static_cast<float>(y) / mViewportHeight;
+    //color.b = 0.0f;
     return color;
 }
 

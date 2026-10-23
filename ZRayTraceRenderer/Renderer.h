@@ -1,6 +1,7 @@
 #pragma once
 #include <atomic>
 #include "Common.h"
+#include "Camera.h"
 
 class Renderer
 {
@@ -17,5 +18,7 @@ private:
 	int mViewportHeight;
 	uint32_t* mBuffer;
 	std::atomic<int> mCurrentPixelIndex;
+
+	Camera mCamera;
 };
 
