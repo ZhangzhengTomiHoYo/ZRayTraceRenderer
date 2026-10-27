@@ -24,7 +24,7 @@ Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeig
 
     mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
     mDisk = new Disk(Vector3f(0, 0, 2), Vector3f(glm::radians(89.0f), 0, 0), 1.0f);
-    mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,5), Vector3f(0,0,0), 1.0f));
+    mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,1), Vector3f(0,0,0), 1.0f));
 };
 
 Renderer::~Renderer() {};
@@ -63,16 +63,32 @@ void Renderer::Run()
 
 Color Renderer::RenderPixel(int x, int y)
 {
-    Ray ray = mCamera.GetRay(x, y);
-    Intersection isect;
-
-    if (mTriangle->Intersect(ray, isect))
+    // SSAA
+    static const int N = 100;
+    Color resultColor{ 0,0,0 };
+    for (size_t i = 0; i < N; i++)
     {
-        Color color = isect.normal *0.5f + 0.5f;
-        return color;
+        float px = x + glm::linearRand(0.0f, 1.0f);
+        float py = y + glm::linearRand(0.0f, 1.0f);
+
+        Color color = RenderSubPixel(px, py);
+        resultColor += (color / static_cast<float>(N));
     }
 
-    return Color(0,0,0);
+    return resultColor;
+}
+
+Color Renderer::RenderSubPixel(float x, float y)
+{
+    Ray ray = mCamera.GetRay(x, y);
+    Intersection isect;
+    Color color{ 0,0,0 };
+
+    if (mDisk->Intersect(ray, isect))
+    {
+        color = isect.normal * 0.5f + 0.5f; // 将法线映射到[0,1]范围内 作为颜色输出
+    }
+    return color;
 }
 
 // 渲染线程的入口函数
