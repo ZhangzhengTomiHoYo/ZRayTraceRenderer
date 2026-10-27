@@ -11,7 +11,8 @@ Renderer::Renderer() {} ;
 
 Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeight(height) 
 {
-    mCamera.Init(
+    Camera camera{};
+    camera.Init(
         Vector3f(0.0f, 0.0f, 0.0f),
         Vector3f(0.0f, 0.0f, 1.0f),
         Vector3f(0.0f, 1.0f, 0.0f),
@@ -21,13 +22,33 @@ Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeig
         width,
         height
     );
+    mScene = new Scene();
+    mScene->SetCamera(camera);
 
-    mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
-    mDisk = new Disk(Vector3f(0, 0, 2), Vector3f(glm::radians(89.0f), 0, 0), 1.0f);
-    mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,1), Vector3f(0,0,0), 1.0f));
+    SceneObject* pSceneObject = mScene->CreateSceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 2.0f);
+    pSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
+    
+
+    //auto mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
+    //auto mDisk = new Disk(Vector3f(0, 0, 2), Vector3f(glm::radians(89.0f), 0, 0), 1.0f);
+    //auto mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,1), Vector3f(0,0,0), 1.0f));
+
+    //mPrimitives.push_back(mSphere);
+    //mPrimitives.push_back(mDisk);
+    //mPrimitives.push_back(mTriangle);
+
+    //mTestSceneObject = new SceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 1.0f);
+
+    //mTestSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
 };
 
-Renderer::~Renderer() {};
+Renderer::~Renderer() 
+{
+    if (mScene)
+    {
+        delete mScene;
+    }
+};
 
 void Renderer::Run()
 {
@@ -80,14 +101,15 @@ Color Renderer::RenderPixel(int x, int y)
 
 Color Renderer::RenderSubPixel(float x, float y)
 {
-    Ray ray = mCamera.GetRay(x, y);
+    Ray ray = mScene->GetCamera().GetRay(x, y);
     Intersection isect;
     Color color{ 0,0,0 };
 
-    if (mDisk->Intersect(ray, isect))
+    if (mScene->Intersect(ray, isect))
     {
-        color = isect.normal * 0.5f + 0.5f; // 将法线映射到[0,1]范围内 作为颜色输出
+        color = isect.normal * 0.5f + 0.5f;
     }
+
     return color;
 }
 

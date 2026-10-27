@@ -33,6 +33,15 @@
     <ClCompile Include="Triangle.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Primitive.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -54,6 +63,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Primitive.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

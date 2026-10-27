@@ -152,7 +152,10 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Disk.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
@@ -160,8 +163,11 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Disk.h" />
+    <ClInclude Include="Primitive.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Scene.h" />
+    <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
