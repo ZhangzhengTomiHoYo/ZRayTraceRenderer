@@ -12,7 +12,7 @@ class Renderer
 {
 public:
 	Renderer();
-	Renderer(int width, int height);
+	Renderer(const char* filename, int width, int height);
 	~Renderer();
 	void Run();
 
@@ -25,9 +25,6 @@ private:
 	uint32_t* mBuffer;
 	std::atomic<int> mCurrentPixelIndex;
 
-	//Camera mCamera;
-
-	//std::vector<Primitive*> mPrimitives;
 	SceneObject* mTestSceneObject = nullptr;
 
 	Scene* mScene;

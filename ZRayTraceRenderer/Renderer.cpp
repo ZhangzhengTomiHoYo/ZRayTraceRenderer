@@ -9,24 +9,30 @@
 
 Renderer::Renderer() {} ;
 
-Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeight(height) 
+Renderer::Renderer(const char* filename, int width, int height) : mViewportWidth(width), mViewportHeight(height) 
 {
-    Camera camera{};
-    camera.Init(
-        Vector3f(0.0f, 0.0f, 0.0f),
-        Vector3f(0.0f, 0.0f, 1.0f),
-        Vector3f(0.0f, 1.0f, 0.0f),
-        glm::radians(120.0f),
-        0.1f,
-        1000.0f,
-        width,
-        height
-    );
     mScene = new Scene();
-    mScene->SetCamera(camera);
+    bool result = mScene->LoadFromXML(filename, width, height);
+    if (!result)
+    {
+        throw std::runtime_error("Failed to load scene data!");
+    }
+    //Camera camera{};
+    //camera.Init(
+    //    Vector3f(0.0f, 0.0f, 0.0f),
+    //    Vector3f(0.0f, 0.0f, 1.0f),
+    //    Vector3f(0.0f, 1.0f, 0.0f),
+    //    glm::radians(120.0f),
+    //    0.1f,
+    //    1000.0f,
+    //    width,
+    //    height
+    //);
+    //mScene = new Scene();
+    //mScene->SetCamera(camera);
 
-    SceneObject* pSceneObject = mScene->CreateSceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 2.0f);
-    pSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
+    //SceneObject* pSceneObject = mScene->CreateSceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 2.0f);
+    //pSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
     
 
     //auto mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
@@ -82,6 +88,7 @@ void Renderer::Run()
 
 }
 
+// NOTE: 渲染代码阅读入口
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA

@@ -1,6 +1,7 @@
 #pragma once
 #include "SceneObject.h"
 #include "Camera.h"
+#include "SceneLoader.h"
 
 class Scene
 {
@@ -13,6 +14,9 @@ public:
 	SceneObject* CreateSceneObject(const Vector3f& position, const Vector3f& euler, float scale);
 
 	SceneObject* Intersect(Ray& ray, Intersection& isect);
+
+	bool LoadFromXML(const char* filename, int W, int H);
+
 private:
 	Camera mCamera;
 	std::vector<SceneObject*> mSceneObjects;

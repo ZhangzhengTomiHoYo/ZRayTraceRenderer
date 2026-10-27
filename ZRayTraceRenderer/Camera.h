@@ -7,9 +7,6 @@ class Camera
 public:
 	Vector3f mPosition;
 
-	//Matrix4x4 viewMatrix;
-	//Matrix4x4 projMatrix;
-
 	Matrix4x4 mCombinedMatrix;            // viewport * proj * view
 	Matrix4x4 mInverseCombinedMatrix;     // 
 

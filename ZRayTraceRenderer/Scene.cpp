@@ -31,3 +31,19 @@ SceneObject* Scene::Intersect(Ray& ray, Intersection& isect)
     }
     return pHitObject;
 }
+
+bool Scene::LoadFromXML(const char* filename, int W, int H)
+{
+    SceneLoader loader;
+
+    if (!loader.LoadFile(filename))
+        return false;
+
+    if (!loader.LoadCamera(mCamera, W, H))
+        return false;
+
+    if (!loader.LoadSceneObjects(*this))
+        return false;
+
+    return true;
+}
