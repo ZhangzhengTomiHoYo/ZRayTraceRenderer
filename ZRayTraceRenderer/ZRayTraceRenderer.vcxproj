@@ -176,7 +176,7 @@
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="scenes\scene0.xml" />
+    <None Include="scenes\scene_0.xml" />
     <None Include="scenes\scene_1.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -17,35 +17,6 @@ Renderer::Renderer(const char* filename, int width, int height) : mViewportWidth
     {
         throw std::runtime_error("Failed to load scene data!");
     }
-    //Camera camera{};
-    //camera.Init(
-    //    Vector3f(0.0f, 0.0f, 0.0f),
-    //    Vector3f(0.0f, 0.0f, 1.0f),
-    //    Vector3f(0.0f, 1.0f, 0.0f),
-    //    glm::radians(120.0f),
-    //    0.1f,
-    //    1000.0f,
-    //    width,
-    //    height
-    //);
-    //mScene = new Scene();
-    //mScene->SetCamera(camera);
-
-    //SceneObject* pSceneObject = mScene->CreateSceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 2.0f);
-    //pSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
-    
-
-    //auto mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
-    //auto mDisk = new Disk(Vector3f(0, 0, 2), Vector3f(glm::radians(89.0f), 0, 0), 1.0f);
-    //auto mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,1), Vector3f(0,0,0), 1.0f));
-
-    //mPrimitives.push_back(mSphere);
-    //mPrimitives.push_back(mDisk);
-    //mPrimitives.push_back(mTriangle);
-
-    //mTestSceneObject = new SceneObject(Vector3f(0, 0, 5), Vector3f(0, 0, 0), 1.0f);
-
-    //mTestSceneObject->CreatePrimitive<Triangle>(Vector3f(3, 0, 0), Vector3f(0, 3, 0), Vector3f(0, 0, 0));
 };
 
 Renderer::~Renderer() 
