@@ -12,15 +12,19 @@ Renderer::Renderer() {} ;
 Renderer::Renderer(int width, int height) : mViewportWidth(width), mViewportHeight(height) 
 {
     mCamera.Init(
-        Vector3f(10.0f, 0.0f, 1.0f),
-        Vector3f(10.0f, 10.0f, 30.0f),
+        Vector3f(0.0f, 0.0f, 0.0f),
+        Vector3f(0.0f, 0.0f, 1.0f),
         Vector3f(0.0f, 1.0f, 0.0f),
-        glm::radians(60.0f),
+        glm::radians(120.0f),
         0.1f,
         1000.0f,
         width,
         height
     );
+
+    mSphere = new Sphere(Vector3f(0, 0, 2), 1.0f);
+    mDisk = new Disk(Vector3f(0, 0, 2), Vector3f(glm::radians(89.0f), 0, 0), 1.0f);
+    mTriangle = new Triangle(Vector3f(1, 0, 0), Vector3f(0, 1, 0), Vector3f(0, 0, 0), makeWorldTransform(Vector3f(0,0,5), Vector3f(0,0,0), 1.0f));
 };
 
 Renderer::~Renderer() {};
@@ -60,15 +64,15 @@ void Renderer::Run()
 Color Renderer::RenderPixel(int x, int y)
 {
     Ray ray = mCamera.GetRay(x, y);
-    Vector3f d = ray.d;
-    Color color = d * 0.5f + 0.5f;
+    Intersection isect;
 
-    //std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    //Color color;
-    //color.r = static_cast<float>(x) / mViewportWidth;
-    //color.g = static_cast<float>(y) / mViewportHeight;
-    //color.b = 0.0f;
-    return color;
+    if (mTriangle->Intersect(ray, isect))
+    {
+        Color color = isect.normal *0.5f + 0.5f;
+        return color;
+    }
+
+    return Color(0,0,0);
 }
 
 // 渲染线程的入口函数
