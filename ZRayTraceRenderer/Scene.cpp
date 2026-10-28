@@ -4,10 +4,15 @@ Scene::~Scene()
 {
     for (auto& obj : mSceneObjects)
     {
-        if (obj)
-        {
-            delete obj;
-        }
+        delete obj;
+    }
+    for (auto& light : mLights)
+    {
+        delete light;
+    }
+    for (auto& pair : mMatrials)
+    {
+        delete pair.second;
     }
 }
 
@@ -43,6 +48,12 @@ bool Scene::LoadFromXML(const char* filename, int W, int H)
         return false;
 
     if (!loader.LoadSceneObjects(*this))
+        return false;
+
+    if (!loader.LoadLights(*this))
+        return false;
+
+    if (!loader.LoadMaterials(*this))
         return false;
 
     return true;

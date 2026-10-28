@@ -16,6 +16,9 @@ public:
 	~Renderer();
 	void Run();
 
+	Color GetIrridance(Ray& ray);
+
+
 private:
 	Color RenderPixel(int x, int y);
 	Color RenderSubPixel(float x, float y);
