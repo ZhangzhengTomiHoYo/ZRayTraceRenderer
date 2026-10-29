@@ -2,10 +2,11 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
+#include <MiniFB.h>
 
 #include "Renderer.h"
-#include <MiniFB.h>
 #include "Common.h"
+#include "Material.h"
 
 Renderer::Renderer() {} ;
 
@@ -88,13 +89,57 @@ Color Renderer::GetIrridance(Ray& ray)
         {
             continue;
         }
-        
+
         float cosTheta = glm::dot(isect.normal, shadowRay.d);
 
         E += L * glm::max(cosTheta, 0.0f);
     }
 
     return E;
+}
+
+Color Renderer::GetRadiance(Ray& ray)
+{
+    Intersection isect;
+    SceneObject* pSceneObject = mScene->Intersect(ray, isect);
+    if (pSceneObject == nullptr)
+    {
+        return Color(0, 0, 0);
+    }
+    Material* pMaterial = pSceneObject->GetMaterial();
+    Matrix3x3 localToWorld = makeCoordinateSystem(isect.normal);
+    Matrix3x3 worldToLocal = glm::inverse(localToWorld);
+    Vector3f wi = worldToLocal * (-ray.d);
+
+    Color Lo(0, 0, 0);
+
+    // E(p)
+    for (Light* pLight : mScene->GetLights())
+    {
+        Vector3f sourcePos;
+        Color Li = pLight->GetRadiance(isect.position, sourcePos);
+
+        // 检测交点到光源有没有遮挡
+        // 求 ShadowRay
+        Ray shadowRay;
+        shadowRay.o = isect.position;
+        shadowRay.d = glm::normalize(sourcePos - isect.position);
+        shadowRay.mint = 1e-4f;
+        shadowRay.maxt = glm::length(sourcePos - isect.position);
+
+        Intersection shadowIsect;
+        if (mScene->Intersect(shadowRay, shadowIsect))
+        {
+            continue;
+        }
+        
+        float cosTheta = glm::dot(isect.normal, shadowRay.d);
+        Vector3f wo = worldToLocal * shadowRay.d;
+        Color brdf = pMaterial->BRDF(wo, wi);
+        Lo += brdf * Li * glm::max(cosTheta, 0.0f);
+    }
+
+    return Lo;
 }
 
 // NOTE: 渲染代码阅读入口
@@ -118,7 +163,7 @@ Color Renderer::RenderPixel(int x, int y)
 Color Renderer::RenderSubPixel(float x, float y)
 {
     Ray ray = mScene->GetCamera().GetRay(x, y);
-    return GetIrridance(ray);
+    return GetRadiance(ray);
 }
 
 // 渲染线程的入口函数

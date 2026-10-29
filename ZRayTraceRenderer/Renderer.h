@@ -17,6 +17,7 @@ public:
 	void Run();
 
 	Color GetIrridance(Ray& ray);
+	Color GetRadiance(Ray& ray);
 
 
 private:

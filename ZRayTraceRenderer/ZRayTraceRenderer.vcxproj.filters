@@ -48,6 +48,12 @@
     <ClCompile Include="tinyxml2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Material.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -86,5 +92,33 @@
     <ClInclude Include="tinyxml2.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Material.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="scenes">
+      <UniqueIdentifier>{E9177226-EB86-4B45-A90F-D507DC3C0C5A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="scenes\scene01.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene02.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene03.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene04.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene05.xml">
+      <Filter>scenes</Filter>
+    </None>
   </ItemGroup>
 </Project>
