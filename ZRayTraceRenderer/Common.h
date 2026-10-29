@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <random>
 
 using Vector3f = glm::vec3;
 using Vector4f = glm::vec4;
@@ -91,4 +92,26 @@ inline Matrix3x3 makeCoordinateSystem(const Vector3f& w)
 	v = glm::normalize(v);
 
 	return Matrix3x3(u, v, w); // 列主序
+}
+
+inline float Random01()
+{
+	thread_local std::mt19937 gen(std::random_device{}());
+	thread_local std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+	return dist(gen);
+}
+
+inline float Random(float a, float b)
+{
+	return a + (b - a) * Random01();
+}
+
+// 从球坐标系转到笛卡尔坐标系:
+inline Vector3f getSphericalCoordinate(float theta, float phi)
+{
+	return Vector3f(
+		sinf(theta) * cosf(phi),
+		sinf(theta) * sinf(phi),
+		cosf(theta)
+	);
 }
