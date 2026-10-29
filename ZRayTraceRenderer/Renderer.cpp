@@ -10,7 +10,7 @@
 
 Renderer::Renderer() {} ;
 
-Renderer::Renderer(const char* filename, int width, int height) : mViewportWidth(width), mViewportHeight(height) 
+Renderer::Renderer(const char* filename, int width, int height, int maxDepth) : mViewportWidth(width), mViewportHeight(height), mMaxDepth(maxDepth)
 {
     mScene = new Scene();
     bool result = mScene->LoadFromXML(filename, width, height);
@@ -98,8 +98,13 @@ Color Renderer::GetIrridance(Ray& ray)
     return E;
 }
 
-Color Renderer::GetRadiance(Ray& ray)
+Color Renderer::GetRadiance(Ray& ray, int depth)
 {
+    if (depth > mMaxDepth)
+    {
+        return Color(0, 0, 0);
+    }
+
     Intersection isect;
     SceneObject* pSceneObject = mScene->Intersect(ray, isect);
     if (pSceneObject == nullptr)
@@ -139,6 +144,34 @@ Color Renderer::GetRadiance(Ray& ray)
         Lo += brdf * Li * glm::max(cosTheta, 0.0f);
     }
 
+    // 间接光照
+    {
+        const int N = 1;
+
+        // 蒙特卡洛 随机球坐标
+        float theta = Random(0.0f, 0.5f * PI);
+        float phi = Random(0.0f, 2.0f * PI);
+
+        // 球坐标系 转 笛卡尔坐标系
+        Vector3f wi = getSphericalCoordinate(theta, phi);
+
+        // 入射光线改变 brdf重新求
+        Color brdf = pMaterial->BRDF(wo, wi);
+
+        // 局部转世界
+        wi = localToWorld * wi;
+        Ray indirectRay;
+        indirectRay.d = wi;
+        indirectRay.o = isect.position;
+        indirectRay.mint = 1e-3f;
+        indirectRay.maxt = 1000.0f;
+        // 求这条间接光的radiance 递归
+        Color Li = GetRadiance(indirectRay, depth + 1);
+        // 将复杂积分 变成 蒙特卡洛积分
+        Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
+
+    }
+
     return Lo;
 }
 
@@ -163,7 +196,7 @@ Color Renderer::RenderPixel(int x, int y)
 Color Renderer::RenderSubPixel(float x, float y)
 {
     Ray ray = mScene->GetCamera().GetRay(x, y);
-    return GetRadiance(ray);
+    return GetRadiance(ray, 0);
 }
 
 // 渲染线程的入口函数

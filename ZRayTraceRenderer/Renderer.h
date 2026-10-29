@@ -12,12 +12,12 @@ class Renderer
 {
 public:
 	Renderer();
-	Renderer(const char* filename, int width, int height);
+	Renderer(const char* filename, int width, int height, int maxDepth);
 	~Renderer();
 	void Run();
 
 	Color GetIrridance(Ray& ray);
-	Color GetRadiance(Ray& ray);
+	Color GetRadiance(Ray& ray, int depth);
 
 
 private:
@@ -32,5 +32,7 @@ private:
 	SceneObject* mTestSceneObject = nullptr;
 
 	Scene* mScene;
+
+	int mMaxDepth;
 };
 
