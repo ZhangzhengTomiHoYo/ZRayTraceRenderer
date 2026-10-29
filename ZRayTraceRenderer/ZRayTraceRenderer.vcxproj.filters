@@ -123,5 +123,8 @@
     <None Include="scenes\scene06.xml">
       <Filter>scenes</Filter>
     </None>
+    <None Include="scenes\scene07.xml">
+      <Filter>scenes</Filter>
+    </None>
   </ItemGroup>
 </Project>

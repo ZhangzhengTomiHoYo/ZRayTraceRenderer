@@ -107,17 +107,35 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
     {
         const char* name = GetChildText(materialElem, "Name");
         const char* type = GetChildText(materialElem, "Type");
-        if (!name || !*name || !type || std::string(type) != "Lambert")
-            return false;
-
-        Color albedo;
-        if (!ParseVector3f(GetChildText(materialElem, "Albedo"), albedo))
+        if (!name || !*name || !type)
             return false;
 
         if (materials.find(name) != materials.end())
             return false;
 
-        scene.CreateMatrial<LambertMaterial>(name, albedo);
+        const std::string materialType = type;
+        if (materialType == "Lambert")
+        {
+            Color albedo;
+            if (!ParseVector3f(GetChildText(materialElem, "Albedo"), albedo))
+                return false;
+
+            scene.CreateMatrial<LambertMaterial>(name, albedo);
+        }
+        else if (materialType == "ConductorSpecular")
+        {
+            Color eta, absorptionCoef, reflectionColor;
+            if (!ParseVector3f(GetChildText(materialElem, "Eta"), eta)
+                || !ParseVector3f(GetChildText(materialElem, "AbsorptionCoef"), absorptionCoef)
+                || !ParseVector3f(GetChildText(materialElem, "ReflectionColor"), reflectionColor))
+                return false;
+
+            scene.CreateMatrial<ConductorSpecularMaterial>(name, eta, absorptionCoef, reflectionColor);
+        }
+        else
+        {
+            return false;
+        }
     }
 
     return true;

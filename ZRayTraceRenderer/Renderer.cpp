@@ -131,34 +131,53 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 
     Color Lo(0, 0, 0);
 
-    // E(p)
-    for (Light* pLight : mScene->GetLights())
+    if (!pMaterial->IsSpecular())
     {
-        Vector3f sourcePos;
-        Color Li = pLight->GetRadiance(isect.position, sourcePos);
-
-        // 检测交点到光源有没有遮挡
-        // 求 ShadowRay
-        Ray shadowRay;
-        shadowRay.o = isect.position;
-        shadowRay.d = glm::normalize(sourcePos - isect.position);
-        shadowRay.mint = 1e-4f;
-        shadowRay.maxt = glm::length(sourcePos - isect.position);
-
-        Intersection shadowIsect;
-        if (mScene->Intersect(shadowRay, shadowIsect))
+        // E(p)
+        for (Light* pLight : mScene->GetLights())
         {
-            continue;
-        }
-        
-        float cosTheta = glm::dot(isect.normal, shadowRay.d);
-        Vector3f wi = worldToLocal * shadowRay.d;
-        Color brdf = pMaterial->BRDF(wo, wi);
-        Lo += brdf * Li * glm::max(cosTheta, 0.0f);
-    }
+            Vector3f sourcePos;
+            Color Li = pLight->GetRadiance(isect.position, sourcePos);
 
-    // 间接光照
+            // 检测交点到光源有没有遮挡
+            // 求 ShadowRay
+            Ray shadowRay;
+            shadowRay.o = isect.position;
+            shadowRay.d = glm::normalize(sourcePos - isect.position);
+            shadowRay.mint = 1e-4f;
+            shadowRay.maxt = glm::length(sourcePos - isect.position);
+
+            Intersection shadowIsect;
+            if (mScene->Intersect(shadowRay, shadowIsect))
+            {
+                continue;
+            }
+
+            float cosTheta = glm::dot(isect.normal, shadowRay.d);
+            Vector3f wi = worldToLocal * shadowRay.d;
+            Color brdf = pMaterial->BRDF(wo, wi);
+            Lo += brdf * Li * glm::max(cosTheta, 0.0f);
+        }
+    }
+    
+    if (pMaterial->IsSpecular())
     {
+        // wo是局部坐标系
+        Vector3f wi(-wo.x, -wo.y, wo.z);
+        Color brdf = pMaterial->BRDF(wo, wi);
+        Ray indirectRay;
+        indirectRay.o = isect.position;
+        indirectRay.d = localToWorld * wi;
+        indirectRay.mint = 1e-3f;
+        indirectRay.maxt = 1000.0f;
+        Color Li = GetRadiance(indirectRay, depth+1);
+        // Lo += brdf * Li * glm::dot(wi, isect.normal);
+        // 因为 isect.normal 是 0,0,1
+        Lo += brdf * Li * glm::max(0.0f, wi.z);
+    }
+    else
+    {
+        // 间接光照
         const int N = 1;
 
         // 蒙特卡洛 随机球坐标
@@ -182,8 +201,8 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         Color Li = GetRadiance(indirectRay, depth + 1);
         // 将复杂积分 变成 蒙特卡洛积分
         Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
-
     }
+
 
     return Lo * RewardFactor;
 }
@@ -192,7 +211,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 1000;
+    static const int N = 100;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {

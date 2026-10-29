@@ -14,7 +14,7 @@ public:
     // 填充传入的相机；XML 中的 Fov 使用角度，W、H 为视口大小。
     bool LoadCamera(Camera& camera, int W, int H) const;
 
-    // 按名称创建 Lambert 材质；必须在 LoadSceneObjects 之前调用。
+    // 按名称创建 Lambert 或 ConductorSpecular 材质；必须在 LoadSceneObjects 之前调用。
     // 没有 Materials 节点时成功；重名、未知类型或无效数据返回 false。
     // 中途失败时，已创建的材质仍由 Scene 管理。
     bool LoadMaterials(Scene& scene) const;
