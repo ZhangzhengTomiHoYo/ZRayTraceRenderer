@@ -47,14 +47,16 @@ bool Scene::LoadFromXML(const char* filename, int W, int H)
     if (!loader.LoadCamera(mCamera, W, H))
         return false;
 
+    if (!loader.LoadMaterials(*this))
+        return false;
+
     if (!loader.LoadSceneObjects(*this))
         return false;
 
     if (!loader.LoadLights(*this))
         return false;
 
-    if (!loader.LoadMaterials(*this))
-        return false;
+
 
     return true;
 }

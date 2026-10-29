@@ -1,8 +1,12 @@
 #pragma once
+#include <map>
+#include <string>
+
 #include "SceneObject.h"
 #include "Camera.h"
 #include "SceneLoader.h"
 #include "Light.h"
+#include "Material.h"
 
 class Scene
 {
@@ -18,19 +22,28 @@ public:
 	SceneObject* Intersect(Ray& ray, Intersection& isect);
 
 	template<typename T, typename... Args>
-	T* CreateLight(Args&&... args)
+	T* CreateLight( Args&&... args)
 	{
 		Light* light = new T(std::forward<Args>(args)...);
 		mLights.push_back(light);
 		return static_cast<T*>(light);
 	}
 
+	template<typename T, typename... Args>
+	T* CreateMatrial(const std::string& name, Args&&... args)
+	{
+		T* material = new T(std::forward<Args>(args)...);
+		mMatrials.insert({name, material});
+		return material;
+	}
+
 	const std::vector<Light*>& GetLights() const { return mLights; }
+	const std::map<std::string, Material*>& GetMaterials() const { return mMatrials; }
 
 private:
 	Camera mCamera;
 	std::vector<SceneObject*> mSceneObjects;
-
 	std::vector<Light*> mLights;
+	std::map<std::string, Material*> mMatrials;
 };
 

@@ -1,8 +1,10 @@
 #pragma once
-#include "Ray.h"
-#include "Primitive.h"
 #include <vector>
 #include <utility>
+
+#include "Ray.h"
+#include "Primitive.h"
+#include "Material.h"
 
 class Primitive;
 
@@ -27,9 +29,14 @@ public:
 		return primitive;
 	}
 
+	void SetMaterial(Material* pMaterial) { m_pMaterial = pMaterial; }
+	Material* GetMaterial() const { return m_pMaterial; }
+
 private:
 	Matrix4x4 mObjectToWorld;
 	Matrix4x4 mWorldToObject;
+
+	Material* m_pMaterial = nullptr;
 
 	std::vector<Primitive*> mPrimitives;
 };
