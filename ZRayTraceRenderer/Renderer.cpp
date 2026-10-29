@@ -10,7 +10,7 @@
 
 Renderer::Renderer() {} ;
 
-Renderer::Renderer(const char* filename, int width, int height, int maxDepth) : mViewportWidth(width), mViewportHeight(height), mMaxDepth(maxDepth)
+Renderer::Renderer(const char* filename, int minDepth, int maxDepth, int width, int height) : mMinDepth(minDepth), mMaxDepth(maxDepth), mViewportWidth(width), mViewportHeight(height)
 {
     mScene = new Scene();
     bool result = mScene->LoadFromXML(filename, width, height);
@@ -105,6 +105,19 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         return Color(0, 0, 0);
     }
 
+    // 俄罗斯轮盘
+    static const float SurvivalProbability = 0.8f;
+    float RewardFactor = 1.0f;
+    if (depth >= mMinDepth)
+    {
+        float K = Random01();
+        if (K > SurvivalProbability)
+        {
+            return Color(0, 0, 0);
+        }
+        RewardFactor = 1.0f / SurvivalProbability;
+    }
+
     Intersection isect;
     SceneObject* pSceneObject = mScene->Intersect(ray, isect);
     if (pSceneObject == nullptr)
@@ -172,14 +185,14 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 
     }
 
-    return Lo;
+    return Lo * RewardFactor;
 }
 
 // NOTE: 渲染代码阅读入口
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 100;
+    static const int N = 1000;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {

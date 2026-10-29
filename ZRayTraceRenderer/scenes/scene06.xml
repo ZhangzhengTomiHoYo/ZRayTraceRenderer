@@ -184,8 +184,8 @@
 		</PointLight>
 
 		<SpotLight>
-			<Position>-0.8, 0.9, 0</Position>
-			<Direction>2, -1, 0</Direction>
+			<Position>-0.8, 1.2, -1.0</Position>
+			<Direction>2, -1.5, 1.5</Direction>
 			<Intensity>2, 2, 2</Intensity>
 			<InnerAngle>10</InnerAngle>
 			<OuterAngle>60</OuterAngle>

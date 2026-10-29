@@ -12,7 +12,7 @@ class Renderer
 {
 public:
 	Renderer();
-	Renderer(const char* filename, int width, int height, int maxDepth);
+	Renderer(const char* filename, int minDepth, int maxDepth, int width, int height);
 	~Renderer();
 	void Run();
 
@@ -33,6 +33,7 @@ private:
 
 	Scene* mScene;
 
+	int mMinDepth;
 	int mMaxDepth;
 };
 
