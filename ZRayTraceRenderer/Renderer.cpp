@@ -109,7 +109,7 @@ Color Renderer::GetRadiance(Ray& ray)
     Material* pMaterial = pSceneObject->GetMaterial();
     Matrix3x3 localToWorld = makeCoordinateSystem(isect.normal);
     Matrix3x3 worldToLocal = glm::inverse(localToWorld);
-    Vector3f wi = worldToLocal * (-ray.d);
+    Vector3f wo = worldToLocal * (-ray.d);
 
     Color Lo(0, 0, 0);
 
@@ -134,7 +134,7 @@ Color Renderer::GetRadiance(Ray& ray)
         }
         
         float cosTheta = glm::dot(isect.normal, shadowRay.d);
-        Vector3f wo = worldToLocal * shadowRay.d;
+        Vector3f wi = worldToLocal * shadowRay.d;
         Color brdf = pMaterial->BRDF(wo, wi);
         Lo += brdf * Li * glm::max(cosTheta, 0.0f);
     }
