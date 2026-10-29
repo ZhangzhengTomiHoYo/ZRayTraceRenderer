@@ -3,6 +3,8 @@
 #include "Sphere.h"
 #include "Disk.h"
 #include "Triangle.h"
+#include "Light.h"
+#include "Material.h"
 #include "tinyxml2.h"
 
 #include <cmath>
@@ -89,6 +91,38 @@ bool SceneLoader::LoadCamera(Camera& camera, int W, int H) const
     return true;
 }
 
+bool SceneLoader::LoadMaterials(Scene& scene) const
+{
+    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
+    if (!root)
+        return false;
+
+    const tinyxml2::XMLElement* materialsElem = root->FirstChildElement("Materials");
+    if (!materialsElem)
+        return true;
+
+    const auto& materials = scene.GetMaterials();
+    for (const tinyxml2::XMLElement* materialElem = materialsElem->FirstChildElement("Material");
+        materialElem; materialElem = materialElem->NextSiblingElement("Material"))
+    {
+        const char* name = GetChildText(materialElem, "Name");
+        const char* type = GetChildText(materialElem, "Type");
+        if (!name || !*name || !type || std::string(type) != "Lambert")
+            return false;
+
+        Color albedo;
+        if (!ParseVector3f(GetChildText(materialElem, "Albedo"), albedo))
+            return false;
+
+        if (materials.find(name) != materials.end())
+            return false;
+
+        scene.CreateMatrial<LambertMaterial>(name, albedo);
+    }
+
+    return true;
+}
+
 bool SceneLoader::LoadSceneObjects(Scene& scene) const
 {
     const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
@@ -98,6 +132,7 @@ bool SceneLoader::LoadSceneObjects(Scene& scene) const
     const tinyxml2::XMLElement* objectsElem = root->FirstChildElement("SceneObjects");
     if (objectsElem)
     {
+        const auto& materials = scene.GetMaterials();
         for (const tinyxml2::XMLElement* objectElem = objectsElem->FirstChildElement("SceneObject");
             objectElem; objectElem = objectElem->NextSiblingElement("SceneObject"))
         {
@@ -114,7 +149,24 @@ bool SceneLoader::LoadSceneObjects(Scene& scene) const
             if (!std::isfinite(scale) || scale == 0.0f)
                 return false;
 
+            Material* material = nullptr;
+            const tinyxml2::XMLElement* materialElem = objectElem->FirstChildElement("Material");
+            if (materialElem)
+            {
+                const char* materialName = materialElem->GetText();
+                if (!materialName || !*materialName)
+                    return false;
+
+                auto it = materials.find(materialName);
+                if (it == materials.end() || !it->second)
+                    return false;
+                material = it->second;
+            }
+
             SceneObject* sceneObject = scene.CreateSceneObject(objectPosition, glm::radians(rotation), scale);
+            if (material)
+                sceneObject->SetMaterial(material);
+
             const tinyxml2::XMLElement* primitivesElem = objectElem->FirstChildElement("Primitives");
             if (!primitivesElem)
                 continue;
@@ -149,6 +201,70 @@ bool SceneLoader::LoadSceneObjects(Scene& scene) const
 
                     sceneObject->CreatePrimitive<Triangle>(v0, v1, v2);
                 }
+            }
+        }
+    }
+
+    return true;
+}
+
+bool SceneLoader::LoadLights(Scene& scene) const
+{
+    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
+    if (!root)
+        return false;
+
+    const tinyxml2::XMLElement* lightsElem = root->FirstChildElement("Lights");
+    if (!lightsElem)
+        return true;
+
+    for (const tinyxml2::XMLElement* lightElem = lightsElem->FirstChildElement();
+        lightElem; lightElem = lightElem->NextSiblingElement())
+    {
+        const std::string name = lightElem->Name();
+        if (name == "DirectionalLight")
+        {
+            Vector3f direction;
+            Color radiance;
+            if (!ParseVector3f(GetChildText(lightElem, "Direction"), direction)
+                || !ParseVector3f(GetChildText(lightElem, "Radiance"), radiance)
+                || glm::length(direction) == 0.0f)
+                return false;
+
+            scene.CreateLight<DirectionalLight>(direction, radiance);
+        }
+        else if (name == "PointLight" || name == "SpotLight")
+        {
+            Vector3f position, attenuations;
+            Color intensity;
+            if (!ParseVector3f(GetChildText(lightElem, "Position"), position)
+                || !ParseVector3f(GetChildText(lightElem, "Intensity"), intensity)
+                || !ParseVector3f(GetChildText(lightElem, "Attenuations"), attenuations))
+                return false;
+
+            if (attenuations.x < 0.0f || attenuations.y < 0.0f || attenuations.z < 0.0f
+                || glm::length(attenuations) == 0.0f)
+                return false;
+
+            if (name == "PointLight")
+            {
+                scene.CreateLight<PointLight>(position, intensity, attenuations);
+            }
+            else
+            {
+                Vector3f direction;
+                if (!ParseVector3f(GetChildText(lightElem, "Direction"), direction)
+                    || glm::length(direction) == 0.0f)
+                    return false;
+
+                float innerAngle = GetChildFloat(lightElem, "InnerAngle", 0.0f);
+                float outerAngle = GetChildFloat(lightElem, "OuterAngle", 0.0f);
+                if (!std::isfinite(innerAngle) || !std::isfinite(outerAngle)
+                    || innerAngle < 0.0f || innerAngle >= outerAngle || outerAngle > 180.0f)
+                    return false;
+
+                scene.CreateLight<SpotLight>(position, direction, intensity,
+                    glm::radians(innerAngle), glm::radians(outerAngle), attenuations);
             }
         }
     }
