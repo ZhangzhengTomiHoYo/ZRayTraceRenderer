@@ -5,8 +5,10 @@
 using Vector3f = glm::vec3;
 using Vector4f = glm::vec4;
 using Matrix4x4 = glm::mat4;
+using Matrix3x3 = glm::mat3;
 using Color = glm::vec3;
 const float PI = glm::pi<float>();
+const float INV_PI = 1.0f / PI;
 
 inline Matrix4x4 makeTranslation(const Vector3f& v)
 {
@@ -70,4 +72,23 @@ inline Matrix4x4 makeWorldTransform(const Vector3f& position, const Vector3f& ro
 	Matrix4x4 S = makeScale(s);
 
 	return T * R * S;
+}
+
+// 建系算法 + 构造新坐标系到世界坐标系的变换矩阵
+inline Matrix3x3 makeCoordinateSystem(const Vector3f& w)
+{
+	Vector3f u(1.0f, 0.0f, 0.0f);
+
+	if (glm::dot(u, w) > 0.99f)
+	{
+		u = Vector3f(0.0f, 1.0f, 0.0f);
+	}
+
+	Vector3f v = glm::cross(w, u);
+	u = glm::cross(v, w);
+
+	u = glm::normalize(u);
+	v = glm::normalize(v);
+
+	return Matrix3x3(u, v, w); // 列主序
 }
