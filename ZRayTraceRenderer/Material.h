@@ -5,9 +5,9 @@ class Material
 {
 public:
 	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const = 0;
-	virtual Color BTDF(const Vector3f& wt, const Vector3f& wo) const { return Color(0); }
+	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const { return Color(0); }
 	virtual bool IsSpecular() const { return false; }
-	virtual bool SampleWt(const Vector3f& wi, Vector3f& wt) const { return false; }
+	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const { return false; }
 
 	virtual ~Material() = default;
 };
@@ -64,9 +64,9 @@ public:
 	virtual bool IsSpecular() const { return true; }
 
 	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
-	virtual Color BTDF(const Vector3f& wt, const Vector3f& wi) const override;
+	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const override;
 
-	virtual bool SampleWt(const Vector3f& wi, Vector3f& wt) const override;
+	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const override;
 private:
 	float mEta;
 	Color mTransmissionColor;

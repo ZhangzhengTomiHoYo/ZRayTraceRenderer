@@ -179,16 +179,18 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         Lo += brdf * Li * fabs(wi.z);                // 注意使用的是绝对值 因为材质可以考虑背面了
 
         // 折射：
-        Vector3f wt;
-        if (pMaterial->SampleWt(wo, wt))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
-        {      
-            Color btdf = pMaterial->BTDF(wo, wt);    // 注意这里 形参是 wt wi 但是传参要反过来
-            Ray refractRay;
-            refractRay.d = localToWorld * wt;
-            refractRay.o = isect.position;
-            refractRay.mint = 1e-3f;
-            Color Li = GetRadiance(refractRay, depth + 1);
-            Lo += btdf * Li * fabs(wt.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
+        {
+            Vector3f wi;
+            if (pMaterial->SampleWt(wo, wi))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
+            {
+                Color btdf = pMaterial->BTDF(wo, wi);    // 注意这里 形参是 wt wi 但是传参要反过来
+                Ray refractRay;
+                refractRay.d = localToWorld * wi;
+                refractRay.o = isect.position;
+                refractRay.mint = 1e-3f;
+                Color Li = GetRadiance(refractRay, depth + 1);
+                Lo += btdf * Li * fabs(wi.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
+            }
         }
     }
     else
@@ -227,7 +229,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 100;
+    static const int N = 1000;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {
