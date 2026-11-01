@@ -65,6 +65,14 @@ bool DielectrricSpecularMaterial::SampleWt(const Vector3f& wi, Vector3f& wt) con
     return ComputeRefractVector(wi, eta_i, eta_t, wt);
 }
 
+Vector3f DielectrricSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+{
+    Vector3f wi(-wo.x, -wo.y, wo.z);
+    pdf = 1.0f;
+
+    return wi;
+}
+
 float DielectrricSpecularMaterial::Fresnel(float eta_i, float eta_t, float cos_i, float cos_t)
 {
     float r1 = (eta_t * cos_i - eta_i * cos_t) / (eta_t * cos_i + eta_i * cos_t);
@@ -87,6 +95,14 @@ Vector3f LambertMaterial::SampleWi(const Vector3f& wo, float& pdf) const
     wi.z = cosTheta;
 
     pdf = INV_PI * cosTheta;
+
+    return wi;
+}
+
+Vector3f ConductorSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+{
+    Vector3f wi(-wo.x, -wo.y, wo.z);
+    pdf = 1.0f;
 
     return wi;
 }

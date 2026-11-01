@@ -53,6 +53,8 @@ public:
 		return Fr * mReflectionColor / std::max(fabs(cosTheta), 1e-4f);
 	}
 
+	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+
 private:
 	Color mEta;              // 折射率
 	Color mAbsorptionCoef;   // 消光系数
@@ -70,6 +72,8 @@ public:
 	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const override;
 
 	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const override;
+
+	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
 private:
 	float mEta;
 	Color mTransmissionColor;

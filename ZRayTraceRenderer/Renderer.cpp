@@ -160,74 +160,102 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
             Lo += brdf * Li * glm::max(cosTheta, 0.0f);
         }
     }
-    
+
     // 间接光照：
-    if (pMaterial->IsSpecular())
+
+    // 反射：
     {
-        // 反射：
-        // wo是局部坐标系
-        Vector3f wi(-wo.x, -wo.y, wo.z);
-        Color brdf = pMaterial->BRDF(wo, wi);
-        Ray indirectRay;
-        indirectRay.o = isect.position;
-        indirectRay.d = localToWorld * wi;
-        indirectRay.mint = 1e-3f;
-        indirectRay.maxt = 1000.0f;
-        Color Li = GetRadiance(indirectRay, depth+1);
-        // Lo += brdf * Li * glm::dot(wi, isect.normal);
-        // 因为 isect.normal 是 0,0,1
-        Lo += brdf * Li * fabs(wi.z);                // 注意使用的是绝对值 因为材质可以考虑背面了
-
-        // 折射：
-        {
-            Vector3f wi;
-            if (pMaterial->SampleWt(wo, wi))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
-            {
-                Color btdf = pMaterial->BTDF(wo, wi);    // 注意这里 形参是 wt wi 但是传参要反过来
-                Ray refractRay;
-                refractRay.d = localToWorld * wi;
-                refractRay.o = isect.position;
-                refractRay.mint = 1e-3f;
-                Color Li = GetRadiance(refractRay, depth + 1);
-                Lo += btdf * Li * fabs(wi.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
-            }
-        }
-    }
-    else
-    {
-        /*
-        // 间接光照
-        const int N = 1;
-
-        // 蒙特卡洛 随机球坐标
-        float theta = Random(0.0f, 0.5f * PI);
-        float phi = Random(0.0f, 2.0f * PI);
-
-        // 球坐标系 转 笛卡尔坐标系
-        Vector3f wi = getSphericalCoordinate(theta, phi);
-        */
-
-        //Vector3f wi = UniformSampleHemisphere();
         float pdf;
         Vector3f wi = pMaterial->SampleWi(wo, pdf);
-
-
-        // 入射光线改变 brdf重新求
         Color brdf = pMaterial->BRDF(wo, wi);
-
-        // 局部转世界
-        Ray indirectRay;
-        indirectRay.d = localToWorld * wi;
-        indirectRay.o = isect.position;
-        indirectRay.mint = 1e-3f;
-        indirectRay.maxt = 1000.0f;
-        // 求这条间接光的radiance 递归
-        Color Li = GetRadiance(indirectRay, depth + 1);
-        // 将复杂积分 变成 蒙特卡洛积分
-        //Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
-        //Lo += brdf * Li * wi.z * 2.0f * PI;
+        Ray r;
+        r.d = localToWorld * wi;
+        r.o = isect.position;
+        r.mint = 1e-3f;
+        Color Li = GetRadiance(r, depth + 1);
         Lo += brdf * Li * wi.z / glm::max(1e-5f, pdf);
     }
+    // 折射
+    Vector3f wt;
+    if (pMaterial->SampleWt(wo, wt))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
+    {
+        Color btdf = pMaterial->BTDF(wo, wt);    // 注意这里 形参是 wt wi 但是传参要反过来
+        Ray refractRay;
+        refractRay.d = localToWorld * wt;
+        refractRay.o = isect.position;
+        refractRay.mint = 1e-3f;
+        Color Li = GetRadiance(refractRay, depth + 1);
+        Lo += btdf * Li * fabs(wt.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
+    }
+    
+    //// 间接光照：
+    //if (pMaterial->IsSpecular())
+    //{
+    //    // 反射：
+    //    // wo是局部坐标系
+    //    Vector3f wi(-wo.x, -wo.y, wo.z);
+    //    Color brdf = pMaterial->BRDF(wo, wi);
+    //    Ray indirectRay;
+    //    indirectRay.o = isect.position;
+    //    indirectRay.d = localToWorld * wi;
+    //    indirectRay.mint = 1e-3f;
+    //    indirectRay.maxt = 1000.0f;
+    //    Color Li = GetRadiance(indirectRay, depth+1);
+    //    // Lo += brdf * Li * glm::dot(wi, isect.normal);
+    //    // 因为 isect.normal 是 0,0,1
+    //    Lo += brdf * Li * fabs(wi.z);                // 注意使用的是绝对值 因为材质可以考虑背面了
+
+    //    // 折射：
+    //    {
+    //        Vector3f wi;
+    //        if (pMaterial->SampleWt(wo, wi))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
+    //        {
+    //            Color btdf = pMaterial->BTDF(wo, wi);    // 注意这里 形参是 wt wi 但是传参要反过来
+    //            Ray refractRay;
+    //            refractRay.d = localToWorld * wi;
+    //            refractRay.o = isect.position;
+    //            refractRay.mint = 1e-3f;
+    //            Color Li = GetRadiance(refractRay, depth + 1);
+    //            Lo += btdf * Li * fabs(wi.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
+    //        }
+    //    }
+    //}
+    //else
+    //{
+    //    /*
+    //    // 间接光照
+    //    const int N = 1;
+
+    //    // 蒙特卡洛 随机球坐标
+    //    float theta = Random(0.0f, 0.5f * PI);
+    //    float phi = Random(0.0f, 2.0f * PI);
+
+    //    // 球坐标系 转 笛卡尔坐标系
+    //    Vector3f wi = getSphericalCoordinate(theta, phi);
+    //    */
+
+    //    //Vector3f wi = UniformSampleHemisphere();
+    //    float pdf;
+    //    Vector3f wi = pMaterial->SampleWi(wo, pdf);
+
+
+    //    // 入射光线改变 brdf重新求
+    //    Color brdf = pMaterial->BRDF(wo, wi);
+
+    //    // 局部转世界
+    //    Ray indirectRay;
+    //    indirectRay.d = localToWorld * wi;
+    //    indirectRay.o = isect.position;
+    //    indirectRay.mint = 1e-3f;
+    //    indirectRay.maxt = 1000.0f;
+    //    // 求这条间接光的radiance 递归
+    //    Color Li = GetRadiance(indirectRay, depth + 1);
+    //    // 将复杂积分 变成 蒙特卡洛积分
+    //    //Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
+    //    //Lo += brdf * Li * wi.z * 2.0f * PI;
+    //    Lo += brdf * Li * wi.z / glm::max(1e-5f, pdf);
+    //}
+
 
 
     return Lo * RewardFactor;
@@ -237,7 +265,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 1;
+    static const int N = 100;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {
