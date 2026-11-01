@@ -6,7 +6,7 @@ Color SpotLight::GetRadiance(const Vector3f& p, Vector3f& sourcePos) const
 
 	// 距离衰减 k1
 	float R = glm::length(p - mPosition);
-	float k1 = 1.0f / (mAttenuations.x * R * R + mAttenuations.y * R + mAttenuations.z);
+	float k1 = 1.0f / glm::max(1e-5f,(mAttenuations.x * R * R + mAttenuations.y * R + mAttenuations.z));
 
 	// 角度衰减 k2
 	Vector3f L = glm::normalize(p - mPosition);
@@ -25,6 +25,7 @@ Color PointLight::GetRadiance(const Vector3f& p, Vector3f& sourcePos) const
 	if (atten < 1e-6)
 	{
 		// TODO
+		atten = 1e-5f;
 	}
 	float attenuation = 1.0f / atten;
 	return mIntensity * attenuation;

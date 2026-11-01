@@ -121,7 +121,7 @@ inline bool ComputeRefractVector(const Vector3f& wi, float eta_i, float eta_t, V
 {	
 	// 法向量(0,0,1)
 	float cos_i = wi.z;
-	float sin_i = sqrtf(1.0f - cos_i * cos_i);
+	float sin_i = glm::max(1e-5f,sqrtf(1.0f - cos_i * cos_i));
 	// 折射定律得到
 	float sin_t = sin_i * eta_i / eta_t;
 
@@ -132,7 +132,7 @@ inline bool ComputeRefractVector(const Vector3f& wi, float eta_i, float eta_t, V
 		return false;
 	}
 
-	float cos_t = sqrtf(1.0f - sin_t * sin_t);
+	float cos_t = glm::max(1e-5f, sqrtf(1.0f - sin_t * sin_t));
 
 	// `cos_t = sqrtf(...)`。开方运算的结果永远是非负的，所以这个 `cos_t` 只代表折射角余弦的 “大小”，本身不带任何方向信息。
 	// 而折射光线 `wt` 是要穿过界面、跑到另一侧去的，它的法向分量 `wt.z` 必须和入射光 `wi.z` 符号相反，这个符号得手动补回去
