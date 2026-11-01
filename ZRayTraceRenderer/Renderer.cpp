@@ -131,6 +131,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 
     Color Lo(0, 0, 0);
 
+    // 直接光照：
     if (!pMaterial->IsSpecular())
     {
         // E(p)
@@ -160,8 +161,10 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         }
     }
     
+    // 间接光照：
     if (pMaterial->IsSpecular())
     {
+        // 反射：
         // wo是局部坐标系
         Vector3f wi(-wo.x, -wo.y, wo.z);
         Color brdf = pMaterial->BRDF(wo, wi);
@@ -173,7 +176,20 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         Color Li = GetRadiance(indirectRay, depth+1);
         // Lo += brdf * Li * glm::dot(wi, isect.normal);
         // 因为 isect.normal 是 0,0,1
-        Lo += brdf * Li * glm::max(0.0f, wi.z);
+        Lo += brdf * Li * fabs(wi.z);                // 注意使用的是绝对值 因为材质可以考虑背面了
+
+        // 折射：
+        Vector3f wt;
+        if (pMaterial->SampleWt(wo, wt))             // 材质没有折射 或 能折射但全反射; 形参 wi wt 但传参 wo wt
+        {      
+            Color btdf = pMaterial->BTDF(wo, wt);    // 注意这里 形参是 wt wi 但是传参要反过来
+            Ray refractRay;
+            refractRay.d = localToWorld * wt;
+            refractRay.o = isect.position;
+            refractRay.mint = 1e-3f;
+            Color Li = GetRadiance(refractRay, depth + 1);
+            Lo += btdf * Li * fabs(wt.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
+        }
     }
     else
     {

@@ -5,7 +5,11 @@ class Material
 {
 public:
 	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const = 0;
+	virtual Color BTDF(const Vector3f& wt, const Vector3f& wo) const { return Color(0); }
 	virtual bool IsSpecular() const { return false; }
+	virtual bool SampleWt(const Vector3f& wi, Vector3f& wt) const { return false; }
+
+	virtual ~Material() = default;
 };
 
 class LambertMaterial : public Material
@@ -52,3 +56,19 @@ private:
 	Color mReflectionColor;  // 反射 
 };
 
+// 绝缘体的镜面材质
+class DielectrricSpecularMaterial : public Material
+{
+public:
+	DielectrricSpecularMaterial(float eta, Color transmissionColor) : mEta(eta), mTransmissionColor(transmissionColor){}
+	virtual bool IsSpecular() const { return true; }
+
+	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Color BTDF(const Vector3f& wt, const Vector3f& wi) const override;
+
+	virtual bool SampleWt(const Vector3f& wi, Vector3f& wt) const override;
+private:
+	float mEta;
+	Color mTransmissionColor;
+	static float Fresnel(float eta_i, float eta_t, float cos_i, float cos_t);
+};

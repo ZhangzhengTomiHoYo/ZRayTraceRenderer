@@ -132,6 +132,16 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 
             scene.CreateMatrial<ConductorSpecularMaterial>(name, eta, absorptionCoef, reflectionColor);
         }
+        else if (materialType == "DielectricSpecular")
+        {
+            float eta = GetChildFloat(materialElem, "Eta", 1.5f);
+            Color transmissionColor;
+            if (!std::isfinite(eta) || eta <= 0.0f
+                || !ParseVector3f(GetChildText(materialElem, "TransmissionColor"), transmissionColor))
+                return false;
+
+            scene.CreateMatrial<DielectrricSpecularMaterial>(name, eta, transmissionColor);
+        }
         else
         {
             return false;
