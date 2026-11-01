@@ -3,6 +3,7 @@
 #include <glm/ext.hpp>
 #include <random>
 
+using Vector2f = glm::vec2;
 using Vector3f = glm::vec3;
 using Vector4f = glm::vec4;
 using Matrix4x4 = glm::mat4;
@@ -144,4 +145,51 @@ inline bool ComputeRefractVector(const Vector3f& wi, float eta_i, float eta_t, V
 	// 肯定是一个单位向量
 
 	return true;
+}
+
+// 在2D圆形均匀采样
+inline Vector2f UniformSampleDisk(float R)
+{
+	float e1 = Random01();
+	float e2 = Random01();
+
+	float r = R * sqrtf(e1);
+	float theta = 2.0f * PI * e2;
+
+	float x = r * cos(theta);
+	float y = r * sin(theta);
+
+	return Vector2f(x, y);
+}
+
+// 在单位半球面均匀采样
+inline Vector3f UniformSampleHemisphere()
+{
+	float e1 = Random01();
+	float e2 = Random01();
+
+	float cosTheta = e1;
+	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
+
+	float phi = 2.0f * PI * e2;
+
+	float x = sinTheta * sin(phi);
+	float y = sinTheta * cos(phi);
+	float z = cosTheta;
+
+	return Vector3f(x, y, z);
+}
+
+// 均匀采样三角形
+inline Vector3f UniformSampleTriangle(const Vector3f& p0, const Vector3f& p1, const Vector3f& p2)
+{
+	float e1 = Random01();
+	float e2 = Random01();
+
+	float sqrt_e1 = sqrtf(e1);
+	float u = 1.0f - sqrt_e1;
+	float v = e2 * sqrt_e1;
+
+	Vector3f p = (1 - u - v) * p0 + u * p1 + v * p2;
+	return p;
 }
