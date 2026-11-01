@@ -71,3 +71,22 @@ float DielectrricSpecularMaterial::Fresnel(float eta_i, float eta_t, float cos_i
     float r2 = (eta_i * cos_i - eta_t * cos_t) / (eta_i * cos_i + eta_t * cos_t);
     return 0.5f * (r1 * r1 + r2 * r2);
 }
+
+Vector3f LambertMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+{
+    float e1 = Random01();
+    float e2 = Random01();
+
+    float cosTheta = sqrtf(1.0f - e1);
+    float sinTheta = sqrtf(e1);
+    float phi = 2.0f * PI * e2;
+
+    Vector3f wi;
+    wi.x = sinTheta * cos(phi);
+    wi.y = sinTheta * sin(phi);
+    wi.z = cosTheta;
+
+    pdf = INV_PI * cosTheta;
+
+    return wi;
+}

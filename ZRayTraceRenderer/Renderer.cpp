@@ -207,7 +207,10 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         Vector3f wi = getSphericalCoordinate(theta, phi);
         */
 
-        Vector3f wi = UniformSampleHemisphere();
+        //Vector3f wi = UniformSampleHemisphere();
+        float pdf;
+        Vector3f wi = pMaterial->SampleWi(wo, pdf);
+
 
         // 入射光线改变 brdf重新求
         Color brdf = pMaterial->BRDF(wo, wi);
@@ -222,7 +225,8 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         Color Li = GetRadiance(indirectRay, depth + 1);
         // 将复杂积分 变成 蒙特卡洛积分
         //Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
-        Lo += brdf * Li * wi.z * 2.0f * PI;
+        //Lo += brdf * Li * wi.z * 2.0f * PI;
+        Lo += brdf * Li * wi.z / glm::max(1e-5f, pdf);
     }
 
 
@@ -233,7 +237,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 100;
+    static const int N = 1;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {
