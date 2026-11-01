@@ -195,6 +195,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
     }
     else
     {
+        /*
         // 间接光照
         const int N = 1;
 
@@ -204,21 +205,24 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 
         // 球坐标系 转 笛卡尔坐标系
         Vector3f wi = getSphericalCoordinate(theta, phi);
+        */
+
+        Vector3f wi = UniformSampleHemisphere();
 
         // 入射光线改变 brdf重新求
         Color brdf = pMaterial->BRDF(wo, wi);
 
         // 局部转世界
-        wi = localToWorld * wi;
         Ray indirectRay;
-        indirectRay.d = wi;
+        indirectRay.d = localToWorld * wi;
         indirectRay.o = isect.position;
         indirectRay.mint = 1e-3f;
         indirectRay.maxt = 1000.0f;
         // 求这条间接光的radiance 递归
         Color Li = GetRadiance(indirectRay, depth + 1);
         // 将复杂积分 变成 蒙特卡洛积分
-        Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
+        //Lo += brdf * Li * cos(theta) * sin(theta) * PI * PI;
+        Lo += brdf * Li * wi.z * 2.0f * PI;
     }
 
 
@@ -229,7 +233,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 1000;
+    static const int N = 100;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {
