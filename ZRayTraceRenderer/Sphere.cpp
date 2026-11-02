@@ -41,3 +41,16 @@ bool Sphere::Intersect(Ray& ray, Intersection& isect) const
 
 	return true;
 }
+
+void Sphere::Sample(Vector3f& p, Vector3f& normal, float& pdf) const
+{
+	p = UniformSampleSphere();
+	normal = p;
+	p *= mRadius;
+
+	// GetObejctToWorld 不带缩放
+	p = Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(p, 1.0));
+	normal = glm::normalize(Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(normal, 1.0)));
+	// GetObejctToWorld 如果带缩放 这里会有点麻烦
+	pdf = 1.0f / (4.0f * PI * mRadius * mRadius);
+}

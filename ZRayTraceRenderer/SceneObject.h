@@ -32,6 +32,11 @@ public:
 	void SetMaterial(Material* pMaterial) { m_pMaterial = pMaterial; }
 	Material* GetMaterial() const { return m_pMaterial; }
 
+	void SetEmissive(const Color& emissive) { mEmissive = emissive; }
+	Color GetEmissive() const { return mEmissive; }
+
+	void Sample(Vector3f& p, Vector3f& normal, float& pdf);
+
 private:
 	Matrix4x4 mObjectToWorld;
 	Matrix4x4 mWorldToObject;
@@ -39,5 +44,7 @@ private:
 	Material* m_pMaterial = nullptr;
 
 	std::vector<Primitive*> mPrimitives;
+
+	Color mEmissive;
 };
 

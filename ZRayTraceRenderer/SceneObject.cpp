@@ -11,7 +11,7 @@ SceneObject::~SceneObject()
 	}
 }
 
-SceneObject::SceneObject(const Vector3f& position, const Vector3f& euler, float scale)
+SceneObject::SceneObject(const Vector3f& position, const Vector3f& euler, float scale) : mEmissive(0)
 {
 	mObjectToWorld = makeWorldTransform(position, euler, scale);
 	mWorldToObject = glm::inverse(mObjectToWorld);
@@ -39,6 +39,13 @@ bool SceneObject::Intersect(Ray& ray, Intersection& isect)
 		}
 	}
 	return hit;
+}
+
+void SceneObject::Sample(Vector3f& p, Vector3f& normal, float& pdf)
+{
+	int index = RandomInt(0, mPrimitives.size() - 1);
+	mPrimitives[index]->Sample(p, normal, pdf);
+	pdf /= mPrimitives.size();
 }
 
 //void SceneObject::AddPrimitives(Primitive* primitive)

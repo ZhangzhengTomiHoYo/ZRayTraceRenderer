@@ -1,11 +1,12 @@
 #pragma once
 #include "Ray.h"
+#include "SceneObject.h"
 
 class Light
 {
 public:
 	// 对于一点，求它的L(p)
-	virtual Color GetRadiance(const Vector3f& p, Vector3f& sourcePos) const = 0;
+	virtual Color GetRadiance(const Vector3f& p, Vector3f& sourcePos, float& pdf) const = 0;
 };
 
 // 平行光
@@ -14,7 +15,7 @@ class DirectionalLight : public Light
 public:
 	DirectionalLight(const Vector3f& direction, const Color& radiance) : mDirection(direction), mRadiance(radiance) {}
 
-	Color GetRadiance(const Vector3f& p, Vector3f& sourcePos) const override;
+	Color GetRadiance(const Vector3f& p, Vector3f& sourcePos, float& pdf) const override;
 
 private:
 	Vector3f mDirection;     // 光线方向 单位向量
@@ -27,7 +28,7 @@ class PointLight : public Light
 public:
 	PointLight(const Vector3f& position, const Color& intensity, const Vector3f& attenuations) : mPosition(position), mIntensity(intensity), mAttenuations(attenuations){}
 
-	Color GetRadiance(const Vector3f& p, Vector3f& sourcePos) const override;
+	Color GetRadiance(const Vector3f& p, Vector3f& sourcePos, float& pdf) const override;
 
 private:
 	Vector3f mPosition;       // 光源位置
@@ -42,7 +43,7 @@ public:
 	SpotLight(const Vector3f& position, const Vector3f& direction, const Color& intensity, float innerAngle, float outerAngle, const Vector3f& attenuations) : 
 		mPosition(position), mDirection(glm::normalize(direction)), mIntensity(intensity), mCosInnerAngle(std::cos(innerAngle)), mCosOuterAngle(std::cos(outerAngle)), mAttenuations(attenuations) {}
 
-	virtual Color GetRadiance(const Vector3f& p, Vector3f& sourcePos) const override;
+	virtual Color GetRadiance(const Vector3f& p, Vector3f& sourcePos, float& pdf) const override;
 private:
 	Vector3f mDirection;  // 光线方向 单位向量
 	Vector3f mPosition;   // 光源位置
@@ -52,4 +53,15 @@ private:
 	float mCosOuterAngle;
 
 	Vector3f mAttenuations;
+};
+
+// 面光源
+class AreaLight : public Light
+{
+public:
+	AreaLight(SceneObject* pSceneObject) : m_pSceneObject(pSceneObject) {}
+	virtual Color GetRadiance(const Vector3f& p, Vector3f& sourcePos, float& pdf) const;
+
+private:
+	SceneObject* m_pSceneObject;
 };
