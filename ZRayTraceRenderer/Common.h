@@ -107,6 +107,13 @@ inline float Random(float a, float b)
 	return a + (b - a) * Random01();
 }
 
+inline int RandomInt(int a, int b)
+{
+	thread_local std::mt19937 gen(std::random_device{}());
+	std::uniform_int_distribution<int> dist(a, b);
+	return dist(gen);
+}
+
 // 从球坐标系转到笛卡尔坐标系:
 inline Vector3f getSphericalCoordinate(float theta, float phi)
 {
@@ -178,6 +185,23 @@ inline Vector3f UniformSampleHemisphere()
 	float z = cosTheta;
 
 	return Vector3f(x, y, z);
+}
+
+// 在单位球面进行均匀采样 w:
+inline Vector3f UniformSampleSphere()
+{
+	float e1 = Random01();
+	float e2 = Random01();
+
+	float phi = 2 * PI * e1;
+	float costheta = 1 - 2 * e2;
+	float sintheta = std::sqrt(std::max(0.0f, 1 - costheta * costheta));
+
+	Vector3f p;
+	p.x = sintheta * std::cos(phi);
+	p.y = sintheta * std::sin(phi);
+	p.z = costheta;
+	return p;
 }
 
 // 均匀采样三角形
