@@ -1,301 +1,304 @@
-﻿#include "SceneLoader.h"
+﻿#define _CRT_SECURE_NO_WARNINGS
+
+#include "SceneLoader.h"
 #include "Scene.h"
-#include "Sphere.h"
 #include "Disk.h"
+#include "Sphere.h"
 #include "Triangle.h"
 #include "Light.h"
 #include "Material.h"
 #include "tinyxml2.h"
+#include <cstdio>
+#include <cstdlib>
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
 
-#include <cmath>
-#include <sstream>
-#include <string>
-
-// SceneLoader 完全由 GPT 6.1 Sol Ultra 编码
-
-namespace
+// 解析 "x, y, z" 格式的字符串为 Vector3f
+static Vector3f ParseVector3f(const char* str)
 {
-    const char* GetChildText(const tinyxml2::XMLElement* parent, const char* name)
-    {
-        const tinyxml2::XMLElement* child = parent->FirstChildElement(name);
-        return child ? child->GetText() : nullptr;
-    }
+	Vector3f v(0.0f);
+	if (!str) return v;
 
-    bool ParseVector3f(const char* text, Vector3f& value)
-    {
-        if (!text)
-            return false;
+	if (std::sscanf(str, " %f , %f , %f", &v.x, &v.y, &v.z) != 3) {
+		// 解析失败，可选择保持默认值或报错处理
+		v = Vector3f(0.0f);
+	}
+	return v;
+}
 
-        std::istringstream stream(text);
-        char comma1, comma2;
-        if (!(stream >> value.x >> comma1 >> value.y >> comma2 >> value.z)
-            || comma1 != ',' || comma2 != ',')
-            return false;
+// 解析 "x, y" 格式的字符串为 Vector2f
+static Vector2f ParseVector2f(const char* str)
+{
+	Vector2f v(0.0f);
+	if (!str) return v;
 
-        stream >> std::ws;
-        return stream.eof() && std::isfinite(value.x)
-            && std::isfinite(value.y) && std::isfinite(value.z);
-    }
+	if (std::sscanf(str, " %f , %f", &v.x, &v.y) != 2) {
+		// 解析失败，可选择保持默认值或报错处理
+		v = Vector2f(0.0f);
+	}
+	return v;
+}
 
-    float GetChildFloat(const tinyxml2::XMLElement* parent, const char* name, float defaultValue)
-    {
-        const tinyxml2::XMLElement* child = parent->FirstChildElement(name);
-        float value = defaultValue;
-        if (!child || child->QueryFloatText(&value) != tinyxml2::XML_SUCCESS)
-            return defaultValue;
-        return value;
-    }
+static float GetChildFloat(tinyxml2::XMLElement* parent, const char* childName, float defaultVal)
+{
+	tinyxml2::XMLElement* child = parent->FirstChildElement(childName);
+	if (child && child->GetText())
+		return (float)atof(child->GetText());
+	return defaultVal;
+}
+
+static const char* GetChildText(tinyxml2::XMLElement* parent, const char* childName)
+{
+	tinyxml2::XMLElement* child = parent->FirstChildElement(childName);
+	if (child)
+		return child->GetText();
+	return nullptr;
 }
 
 bool SceneLoader::LoadFile(const char* filename)
 {
-    mDocument.Clear();
-    if (!filename || !*filename)
-        return false;
+	mDocument.Clear();
+	if (!filename || !*filename)
+		return false;
 
-    if (mDocument.LoadFile(filename) != tinyxml2::XML_SUCCESS)
-        return false;
+	if (mDocument.LoadFile(filename) != tinyxml2::XML_SUCCESS)
+		return false;
 
-    return mDocument.FirstChildElement("Scene") != nullptr;
+	return mDocument.FirstChildElement("Scene") != nullptr;
 }
 
 bool SceneLoader::LoadCamera(Camera& camera, int W, int H) const
 {
-    if (W <= 0 || H <= 0)
-        return false;
+	if (W <= 0 || H <= 0)
+		return false;
 
-    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
-    if (!root)
-        return false;
+	tinyxml2::XMLElement* pRoot = mDocument.FirstChildElement("Scene");
+	if (!pRoot)
+		return false;
 
-    const tinyxml2::XMLElement* cameraElem = root->FirstChildElement("Camera");
-    if (!cameraElem)
-        return false;
+	// 解析 Camera
+	tinyxml2::XMLElement* pCameraElem = pRoot->FirstChildElement("Camera");
+	if (pCameraElem)
+	{
+		Vector3f position = ParseVector3f(GetChildText(pCameraElem, "Position"));
+		Vector3f target = ParseVector3f(GetChildText(pCameraElem, "Target"));
+		Vector3f up = ParseVector3f(GetChildText(pCameraElem, "Up"));
+		float nearZ = GetChildFloat(pCameraElem, "NearZ", 0.1f);
+		float farZ = GetChildFloat(pCameraElem, "FarZ", 1000.0f);
+		float fovDeg = GetChildFloat(pCameraElem, "Fov", 45.0f);
+		float fovRad = glm::radians(fovDeg);
+		camera.Init(position, target, up, fovRad, nearZ, farZ, W, H);
+	}
 
-    Vector3f position, target, up;
-    if (!ParseVector3f(GetChildText(cameraElem, "Position"), position)
-        || !ParseVector3f(GetChildText(cameraElem, "Target"), target)
-        || !ParseVector3f(GetChildText(cameraElem, "Up"), up))
-        return false;
-
-    float nearZ = GetChildFloat(cameraElem, "NearZ", 0.1f);
-    float farZ = GetChildFloat(cameraElem, "FarZ", 1000.0f);
-    float fovDeg = GetChildFloat(cameraElem, "Fov", 45.0f);
-    if (!std::isfinite(nearZ) || !std::isfinite(farZ) || !std::isfinite(fovDeg)
-        || nearZ <= 0.0f || farZ <= nearZ || fovDeg <= 0.0f || fovDeg >= 180.0f
-        || glm::length(target - position) == 0.0f
-        || glm::length(glm::cross(up, target - position)) == 0.0f)
-        return false;
-
-    camera.Init(position, target, up, glm::radians(fovDeg), nearZ, farZ, W, H);
-    return true;
+	return pCameraElem != nullptr;
 }
 
 bool SceneLoader::LoadMaterials(Scene& scene) const
 {
-    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
-    if (!root)
-        return false;
+	tinyxml2::XMLElement* pRoot = mDocument.FirstChildElement("Scene");
+	if (!pRoot)
+		return false;
 
-    const tinyxml2::XMLElement* materialsElem = root->FirstChildElement("Materials");
-    if (!materialsElem)
-        return true;
+	Scene* pScene = &scene;
 
-    const auto& materials = scene.GetMaterials();
-    for (const tinyxml2::XMLElement* materialElem = materialsElem->FirstChildElement("Material");
-        materialElem; materialElem = materialElem->NextSiblingElement("Material"))
-    {
-        const char* name = GetChildText(materialElem, "Name");
-        const char* type = GetChildText(materialElem, "Type");
-        if (!name || !*name || !type)
-            return false;
+	// 解析 Materials（必须在 SceneObjects 之前，以便后续按名字引用）
+	tinyxml2::XMLElement* pMaterialsElem = pRoot->FirstChildElement("Materials");
+	if (pMaterialsElem)
+	{
+		for (tinyxml2::XMLElement* pMatElem = pMaterialsElem->FirstChildElement("Material");
+			pMatElem != nullptr;
+			pMatElem = pMatElem->NextSiblingElement("Material"))
+		{
+			const char* nameText = GetChildText(pMatElem, "Name");
+			const char* typeText = GetChildText(pMatElem, "Type");
+			if (!nameText || !typeText)
+				continue;
 
-        if (materials.find(name) != materials.end())
-            return false;
+			std::string name = nameText;
+			std::string type = typeText;
 
-        const std::string materialType = type;
-        if (materialType == "Lambert")
-        {
-            Color albedo;
-            if (!ParseVector3f(GetChildText(materialElem, "Albedo"), albedo))
-                return false;
+			if (type == "Lambert")
+			{
+				Color albedo = ParseVector3f(GetChildText(pMatElem, "Albedo"));
+				pScene->CreateMatrial<LambertMaterial>(name, albedo);
+			}
+			// 后续可在此扩展更多材质类型
+			else if (type == "ConductorSpecular")
+			{
+				Color eta = ParseVector3f(GetChildText(pMatElem, "Eta"));
+				Color absorptionCoef = ParseVector3f(GetChildText(pMatElem, "AbsorptionCoef"));
+				Color reflectionColor = ParseVector3f(GetChildText(pMatElem, "ReflectionColor"));
+				pScene->CreateMatrial<ConductorSpecularMaterial>(name, eta, absorptionCoef, reflectionColor);
+			}
+			else if (type == "DielectricSpecular")
+			{
+				float eta = GetChildFloat(pMatElem, "Eta", 1.5f);
+				Color transmissionColor = ParseVector3f(GetChildText(pMatElem, "TransmissionColor"));
+				pScene->CreateMatrial<DielectrricSpecularMaterial>(name, eta, transmissionColor);
+			}
+		}
+	}
 
-            scene.CreateMatrial<LambertMaterial>(name, albedo);
-        }
-        else if (materialType == "ConductorSpecular")
-        {
-            Color eta, absorptionCoef, reflectionColor;
-            if (!ParseVector3f(GetChildText(materialElem, "Eta"), eta)
-                || !ParseVector3f(GetChildText(materialElem, "AbsorptionCoef"), absorptionCoef)
-                || !ParseVector3f(GetChildText(materialElem, "ReflectionColor"), reflectionColor))
-                return false;
-
-            scene.CreateMatrial<ConductorSpecularMaterial>(name, eta, absorptionCoef, reflectionColor);
-        }
-        else if (materialType == "DielectricSpecular")
-        {
-            float eta = GetChildFloat(materialElem, "Eta", 1.5f);
-            Color transmissionColor;
-            if (!std::isfinite(eta) || eta <= 0.0f
-                || !ParseVector3f(GetChildText(materialElem, "TransmissionColor"), transmissionColor))
-                return false;
-
-            scene.CreateMatrial<DielectrricSpecularMaterial>(name, eta, transmissionColor);
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    return true;
+	return true;
 }
 
 bool SceneLoader::LoadSceneObjects(Scene& scene) const
 {
-    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
-    if (!root)
-        return false;
+	tinyxml2::XMLElement* pRoot = mDocument.FirstChildElement("Scene");
+	if (!pRoot)
+		return false;
 
-    const tinyxml2::XMLElement* objectsElem = root->FirstChildElement("SceneObjects");
-    if (objectsElem)
-    {
-        const auto& materials = scene.GetMaterials();
-        for (const tinyxml2::XMLElement* objectElem = objectsElem->FirstChildElement("SceneObject");
-            objectElem; objectElem = objectElem->NextSiblingElement("SceneObject"))
-        {
-            const tinyxml2::XMLElement* transformElem = objectElem->FirstChildElement("Transform");
-            if (!transformElem)
-                continue;
+	Scene* pScene = &scene;
 
-            Vector3f objectPosition, rotation;
-            if (!ParseVector3f(GetChildText(transformElem, "Position"), objectPosition)
-                || !ParseVector3f(GetChildText(transformElem, "Rotation"), rotation))
-                return false;
+	// 解析 SceneObjects
+	tinyxml2::XMLElement* pSceneObjectsElem = pRoot->FirstChildElement("SceneObjects");
+	if (pSceneObjectsElem)
+	{
+		for (tinyxml2::XMLElement* pObjElem = pSceneObjectsElem->FirstChildElement("SceneObject");
+			pObjElem != nullptr;
+			pObjElem = pObjElem->NextSiblingElement("SceneObject"))
+		{
+			SceneObject* pSceneObject = nullptr;
 
-            float scale = GetChildFloat(transformElem, "Scale", 1.0f);
-            if (!std::isfinite(scale) || scale == 0.0f)
-                return false;
+			// 解析 Transform
+			tinyxml2::XMLElement* pTransformElem = pObjElem->FirstChildElement("Transform");
+			if (pTransformElem)
+			{
+				Vector3f position = ParseVector3f(GetChildText(pTransformElem, "Position"));
+				Vector3f rotation = ParseVector3f(GetChildText(pTransformElem, "Rotation"));
+				float scale = GetChildFloat(pTransformElem, "Scale", 1.0f);
 
-            Material* material = nullptr;
-            const tinyxml2::XMLElement* materialElem = objectElem->FirstChildElement("Material");
-            if (materialElem)
-            {
-                const char* materialName = materialElem->GetText();
-                if (!materialName || !*materialName)
-                    return false;
+				// rotation 从角度转弧度
+				rotation = glm::radians(rotation);
+				pSceneObject = pScene->CreateSceneObject(position, rotation, scale);
+			}
 
-                auto it = materials.find(materialName);
-                if (it == materials.end() || !it->second)
-                    return false;
-                material = it->second;
-            }
+			if (!pSceneObject)
+				continue;
 
-            SceneObject* sceneObject = scene.CreateSceneObject(objectPosition, glm::radians(rotation), scale);
-            if (material)
-                sceneObject->SetMaterial(material);
+			// 解析 Material 引用（按材质名查找）
+			const char* materialName = GetChildText(pObjElem, "Material");
+			if (materialName)
+			{
+				const auto& materials = pScene->GetMaterials();
+				auto it = materials.find(materialName);
+				Material* pMaterial = it != materials.end() ? it->second : nullptr;
+				if (pMaterial)
+					pSceneObject->SetMaterial(pMaterial);
+			}
 
-            const tinyxml2::XMLElement* primitivesElem = objectElem->FirstChildElement("Primitives");
-            if (!primitivesElem)
-                continue;
+			// 解析 Primitives
+			tinyxml2::XMLElement* pPrimitivesElem = pObjElem->FirstChildElement("Primitives");
+			if (pPrimitivesElem)
+			{
+				// Sphere
+				for (tinyxml2::XMLElement* pElem = pPrimitivesElem->FirstChildElement("Sphere");
+					pElem != nullptr;
+					pElem = pElem->NextSiblingElement("Sphere"))
+				{
+					float radius = GetChildFloat(pElem, "Radius", 1.0f);
+					pSceneObject->CreatePrimitive<Sphere>(radius);
+				}
 
-            // 按 XML 中的顺序创建各个图元。
-            for (const tinyxml2::XMLElement* primitiveElem = primitivesElem->FirstChildElement();
-                primitiveElem; primitiveElem = primitiveElem->NextSiblingElement())
-            {
-                const std::string name = primitiveElem->Name();
-                if (name == "Sphere" || name == "Disk")
-                {
-                    float radius = GetChildFloat(primitiveElem, "Radius", 1.0f);
-                    if (!std::isfinite(radius) || radius <= 0.0f)
-                        return false;
+				// Disk
+				for (tinyxml2::XMLElement* pElem = pPrimitivesElem->FirstChildElement("Disk");
+					pElem != nullptr;
+					pElem = pElem->NextSiblingElement("Disk"))
+				{
+					float radius = GetChildFloat(pElem, "Radius", 1.0f);
+					pSceneObject->CreatePrimitive<Disk>(radius);
+				}
 
-                    if (name == "Sphere")
-                        sceneObject->CreatePrimitive<Sphere>(radius);
-                    else
-                        sceneObject->CreatePrimitive<Disk>(radius);
-                }
-                else if (name == "Triangle")
-                {
-                    const tinyxml2::XMLElement* v0Elem = primitiveElem->FirstChildElement("Vertex");
-                    const tinyxml2::XMLElement* v1Elem = v0Elem ? v0Elem->NextSiblingElement("Vertex") : nullptr;
-                    const tinyxml2::XMLElement* v2Elem = v1Elem ? v1Elem->NextSiblingElement("Vertex") : nullptr;
-                    Vector3f v0, v1, v2;
-                    if (!v0Elem || !v1Elem || !v2Elem
-                        || !ParseVector3f(v0Elem->GetText(), v0)
-                        || !ParseVector3f(v1Elem->GetText(), v1)
-                        || !ParseVector3f(v2Elem->GetText(), v2))
-                        return false;
+				// Triangle
+				for (tinyxml2::XMLElement* pElem = pPrimitivesElem->FirstChildElement("Triangle");
+					pElem != nullptr;
+					pElem = pElem->NextSiblingElement("Triangle"))
+				{
+					// 按顺序读取三个 Vertex
+					tinyxml2::XMLElement* pV0 = pElem->FirstChildElement("Vertex");
+					tinyxml2::XMLElement* pV1 = pV0 ? pV0->NextSiblingElement("Vertex") : nullptr;
+					tinyxml2::XMLElement* pV2 = pV1 ? pV1->NextSiblingElement("Vertex") : nullptr;
 
-                    sceneObject->CreatePrimitive<Triangle>(v0, v1, v2);
-                }
-            }
-        }
-    }
+					if (pV0 && pV1 && pV2)
+					{
+						Vector3f v0 = ParseVector3f(pV0->GetText());
+						Vector3f v1 = ParseVector3f(pV1->GetText());
+						Vector3f v2 = ParseVector3f(pV2->GetText());
+						pSceneObject->CreatePrimitive<Triangle>(v0, v1, v2);
+					}
+				}
+			}
 
-    return true;
+			// 读取Emissive并设置
+			const char* emissiveText = GetChildText(pObjElem, "Emissive");
+			if (emissiveText)
+			{
+				Color emissive = ParseVector3f(emissiveText);
+				pSceneObject->SetEmissive(emissive);
+				if (emissive.r > 1e-5f || emissive.g > 1e-5f || emissive.b > 1e-6f)
+				{
+					pScene->CreateLight<AreaLight>(pSceneObject);
+				}
+
+			}
+		}
+	}
+
+	return true;
 }
 
 bool SceneLoader::LoadLights(Scene& scene) const
 {
-    const tinyxml2::XMLElement* root = mDocument.FirstChildElement("Scene");
-    if (!root)
-        return false;
+	tinyxml2::XMLElement* pRoot = mDocument.FirstChildElement("Scene");
+	if (!pRoot)
+		return false;
 
-    const tinyxml2::XMLElement* lightsElem = root->FirstChildElement("Lights");
-    if (!lightsElem)
-        return true;
+	Scene* pScene = &scene;
 
-    for (const tinyxml2::XMLElement* lightElem = lightsElem->FirstChildElement();
-        lightElem; lightElem = lightElem->NextSiblingElement())
-    {
-        const std::string name = lightElem->Name();
-        if (name == "DirectionalLight")
-        {
-            Vector3f direction;
-            Color radiance;
-            if (!ParseVector3f(GetChildText(lightElem, "Direction"), direction)
-                || !ParseVector3f(GetChildText(lightElem, "Radiance"), radiance)
-                || glm::length(direction) == 0.0f)
-                return false;
+	// 解析 Lights
+	tinyxml2::XMLElement* pLightsElem = pRoot->FirstChildElement("Lights");
+	if (pLightsElem)
+	{
+		// DirectionalLight
+		for (tinyxml2::XMLElement* pElem = pLightsElem->FirstChildElement("DirectionalLight");
+			pElem != nullptr;
+			pElem = pElem->NextSiblingElement("DirectionalLight"))
+		{
+			Vector3f direction = ParseVector3f(GetChildText(pElem, "Direction"));
+			Color    radiance  = ParseVector3f(GetChildText(pElem, "Radiance"));
+			pScene->CreateLight<DirectionalLight>(direction, radiance);
+		}
 
-            scene.CreateLight<DirectionalLight>(direction, radiance);
-        }
-        else if (name == "PointLight" || name == "SpotLight")
-        {
-            Vector3f position, attenuations;
-            Color intensity;
-            if (!ParseVector3f(GetChildText(lightElem, "Position"), position)
-                || !ParseVector3f(GetChildText(lightElem, "Intensity"), intensity)
-                || !ParseVector3f(GetChildText(lightElem, "Attenuations"), attenuations))
-                return false;
+		// PointLight
+		for (tinyxml2::XMLElement* pElem = pLightsElem->FirstChildElement("PointLight");
+			pElem != nullptr;
+			pElem = pElem->NextSiblingElement("PointLight"))
+		{
+			Vector3f position     = ParseVector3f(GetChildText(pElem, "Position"));
+			Color    intensity    = ParseVector3f(GetChildText(pElem, "Intensity"));
+			Vector3f attenuations = ParseVector3f(GetChildText(pElem, "Attenuations"));
+			pScene->CreateLight<PointLight>(position, intensity, attenuations);
+		}
 
-            if (attenuations.x < 0.0f || attenuations.y < 0.0f || attenuations.z < 0.0f
-                || glm::length(attenuations) == 0.0f)
-                return false;
+		// SpotLight
+		for (tinyxml2::XMLElement* pElem = pLightsElem->FirstChildElement("SpotLight");
+			pElem != nullptr;
+			pElem = pElem->NextSiblingElement("SpotLight"))
+		{
+			Vector3f position     = ParseVector3f(GetChildText(pElem, "Position"));
+			Vector3f direction    = ParseVector3f(GetChildText(pElem, "Direction"));
+			Color    intensity    = ParseVector3f(GetChildText(pElem, "Intensity"));
+			float    innerAngle   = GetChildFloat(pElem, "InnerAngle", 0.0f);
+			float    outerAngle   = GetChildFloat(pElem, "OuterAngle", 0.0f);
+			Vector3f attenuations = ParseVector3f(GetChildText(pElem, "Attenuations"));
 
-            if (name == "PointLight")
-            {
-                scene.CreateLight<PointLight>(position, intensity, attenuations);
-            }
-            else
-            {
-                Vector3f direction;
-                if (!ParseVector3f(GetChildText(lightElem, "Direction"), direction)
-                    || glm::length(direction) == 0.0f)
-                    return false;
+			// XML 中以"度"为单位，转换为弧度
+			float innerRad = glm::radians(innerAngle);
+			float outerRad = glm::radians(outerAngle);
 
-                float innerAngle = GetChildFloat(lightElem, "InnerAngle", 0.0f);
-                float outerAngle = GetChildFloat(lightElem, "OuterAngle", 0.0f);
-                if (!std::isfinite(innerAngle) || !std::isfinite(outerAngle)
-                    || innerAngle < 0.0f || innerAngle >= outerAngle || outerAngle > 180.0f)
-                    return false;
+			pScene->CreateLight<SpotLight>(position, direction, intensity, innerRad, outerRad, attenuations);
+		}
+	}
 
-                scene.CreateLight<SpotLight>(position, direction, intensity,
-                    glm::radians(innerAngle), glm::radians(outerAngle), attenuations);
-            }
-        }
-    }
-
-    return true;
+	return true;
 }
