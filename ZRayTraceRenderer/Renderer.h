@@ -17,7 +17,7 @@ public:
 	void Run();
 
 	Color GetIrridance(Ray& ray);
-	Color GetRadiance(Ray& ray, int depth);
+	Color GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular);
 
 
 private:

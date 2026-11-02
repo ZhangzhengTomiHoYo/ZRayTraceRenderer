@@ -60,45 +60,46 @@ void Renderer::Run()
 
 }
 
-Color Renderer::GetIrridance(Ray& ray)
-{
-    Intersection isect;
-    if (!mScene->Intersect(ray, isect))
-    {
-        return Color(0, 0, 0);
-    }
+//Color Renderer::GetIrridance(Ray& ray)
+//{
+//    Intersection isect;
+//    if (!mScene->Intersect(ray, isect))
+//    {
+//        return Color(0, 0, 0);
+//    }
+//
+//    Color E(0, 0, 0);
+//
+//    // E(p)
+//    for (Light* pLight : mScene->GetLights())
+//    {
+//        float pdf;
+//        Vector3f sourcePos;
+//        Color L = pLight->GetRadiance(isect.position, sourcePos, pdf);
+//
+//        // 检测交点到光源有没有遮挡
+//        // 求 ShadowRay
+//        Ray shadowRay;
+//        shadowRay.o = isect.position;
+//        shadowRay.d = glm::normalize(sourcePos - isect.position);
+//        shadowRay.mint = 1e-4f;
+//        shadowRay.maxt = glm::length(sourcePos - isect.position);
+//
+//        Intersection shadowIsect;
+//        if (mScene->Intersect(shadowRay, shadowIsect))
+//        {
+//            continue;
+//        }
+//
+//        float cosTheta = glm::dot(isect.normal, shadowRay.d);
+//
+//        E += L * glm::max(cosTheta, 0.0f);
+//    }
+//
+//    return E;
+//}
 
-    Color E(0, 0, 0);
-
-    // E(p)
-    for (Light* pLight : mScene->GetLights())
-    {
-        Vector3f sourcePos;
-        Color L = pLight->GetRadiance(isect.position, sourcePos);
-
-        // 检测交点到光源有没有遮挡
-        // 求 ShadowRay
-        Ray shadowRay;
-        shadowRay.o = isect.position;
-        shadowRay.d = glm::normalize(sourcePos - isect.position);
-        shadowRay.mint = 1e-4f;
-        shadowRay.maxt = glm::length(sourcePos - isect.position);
-
-        Intersection shadowIsect;
-        if (mScene->Intersect(shadowRay, shadowIsect))
-        {
-            continue;
-        }
-
-        float cosTheta = glm::dot(isect.normal, shadowRay.d);
-
-        E += L * glm::max(cosTheta, 0.0f);
-    }
-
-    return E;
-}
-
-Color Renderer::GetRadiance(Ray& ray, int depth)
+Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
 {
     if (depth > mMaxDepth)
     {
@@ -131,14 +132,24 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 
     Color Lo(0, 0, 0);
 
+    // 自发光
+    // 多数游戏引擎放在material上 但本项目放在sceneobject上
+    // 因为一个物体有很多primitive 有很多子material 有很多自发光
+    Color Le = pSceneObject->GetEmissive();
+    if (bPrevIsSpecular || depth == 0)
+    {
+        Lo += Le;
+    }
+
     // 直接光照：
     if (!pMaterial->IsSpecular())
     {
         // E(p)
         for (Light* pLight : mScene->GetLights())
         {
+            float pdf;
             Vector3f sourcePos;
-            Color Li = pLight->GetRadiance(isect.position, sourcePos);
+            Color Li = pLight->GetRadiance(isect.position, sourcePos, pdf);
 
             // 检测交点到光源有没有遮挡
             // 求 ShadowRay
@@ -146,7 +157,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
             shadowRay.o = isect.position;
             shadowRay.d = glm::normalize(sourcePos - isect.position);
             shadowRay.mint = 1e-4f;
-            shadowRay.maxt = glm::length(sourcePos - isect.position);
+            shadowRay.maxt = glm::length(sourcePos - isect.position) - 1e-3f;
 
             Intersection shadowIsect;
             if (mScene->Intersect(shadowRay, shadowIsect))
@@ -157,7 +168,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
             float cosTheta = glm::dot(isect.normal, shadowRay.d);
             Vector3f wi = worldToLocal * shadowRay.d;
             Color brdf = pMaterial->BRDF(wo, wi);
-            Lo += brdf * Li * glm::max(cosTheta, 0.0f);
+            Lo += brdf * Li * glm::max(cosTheta, 0.0f) / glm::max(1e-5f, pdf);
         }
     }
 
@@ -172,8 +183,8 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         r.d = localToWorld * wi;
         r.o = isect.position;
         r.mint = 1e-3f;
-        Color Li = GetRadiance(r, depth + 1);
-        Lo += brdf * Li * wi.z / glm::max(1e-5f, pdf);
+        Color Li = GetRadiance(r, depth + 1, pMaterial->IsSpecular());
+        Lo += brdf * Li * fabs(wi.z) / glm::max(1e-5f, pdf);
     }
     // 折射
     Vector3f wt;
@@ -184,7 +195,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
         refractRay.d = localToWorld * wt;
         refractRay.o = isect.position;
         refractRay.mint = 1e-3f;
-        Color Li = GetRadiance(refractRay, depth + 1);
+        Color Li = GetRadiance(refractRay, depth + 1, pMaterial->IsSpecular());
         Lo += btdf * Li * fabs(wt.z);            // 注意使用的是绝对值 因为材质可以考虑背面了
     }
     
@@ -265,7 +276,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 100;
+    static const int N = 1000;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {
@@ -282,7 +293,7 @@ Color Renderer::RenderPixel(int x, int y)
 Color Renderer::RenderSubPixel(float x, float y)
 {
     Ray ray = mScene->GetCamera().GetRay(x, y);
-    return GetRadiance(ray, 0);
+    return GetRadiance(ray, 0, false);
 }
 
 // 渲染线程的入口函数
