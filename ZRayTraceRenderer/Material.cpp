@@ -106,3 +106,63 @@ Vector3f ConductorSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) con
 
     return wi;
 }
+
+Color OrenNayarMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
+{
+    // 不计算物体背面
+    if (wo.z <= 0.0f || wi.z <= 0.0f)
+    {
+        return Color(0);
+    }
+    static const float epsilon = 1e-5f;
+
+    float sigma2 = mSigma * mSigma;
+
+    float A = 1.0f - (sigma2 / 2.0f * (sigma2 + 0.33f));
+    float B = 0.45f * sigma2 / (sigma2 + 0.09f);
+
+    float cos_theta_i = wi.z;
+    float sin_theta_i = sqrtf(glm::max(epsilon, 1.0f - cos_theta_i * cos_theta_i));
+    float cos_phi_i = wi.x / glm::max(epsilon, sin_theta_i);
+    float sin_phi_i = wi.y / glm::max(epsilon, sin_theta_i);
+    float tan_theta_i = sin_theta_i / glm::max(epsilon, cos_theta_i);
+
+    float cos_theta_o = wo.z;
+    float sin_theta_o = sqrtf(glm::max(epsilon, 1.0f - cos_theta_o * cos_theta_o));
+    float cos_phi_o = wo.x / glm::max(epsilon, sin_theta_o);
+    float sin_phi_o = wi.y / glm::max(epsilon, sin_theta_o);
+    float tan_theta_o = sin_theta_o / glm::max(epsilon, cos_theta_o);
+
+    // alpha max(theta_i, theta_o)
+    float sin_alpha = glm::max(sin_theta_i, sin_theta_o);
+    // beta min(theta_i, theta_o)
+    float tan_beta = glm::min(tan_theta_i, tan_theta_o);
+
+    // cos(phi_i - phi_o)
+    float cos_delta_phi = cos_phi_i * cos_phi_o + sin_phi_i * sin_phi_o;
+
+    return mAlbedo * INV_PI * (A + B * glm::max(0.0f, cos_delta_phi) * sin_alpha * tan_beta);
+}
+
+Vector3f OrenNayarMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+{
+    // ON材质的BRDF十分复杂
+    // pdf按 cos_theta_i 进行重要性采样
+    // 和Lambert材质的重要性采样一样
+
+    float e1 = Random01();
+    float e2 = Random01();
+
+    float cosTheta = sqrtf(1.0f - e1);
+    float sinTheta = sqrtf(e1);
+    float phi = 2.0f * PI * e2;
+
+    Vector3f wi;
+    wi.x = sinTheta * cos(phi);
+    wi.y = sinTheta * sin(phi);
+    wi.z = cosTheta;
+
+    pdf = INV_PI * cosTheta;
+
+    return wi;
+}

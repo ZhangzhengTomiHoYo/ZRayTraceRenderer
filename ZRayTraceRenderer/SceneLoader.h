@@ -17,7 +17,8 @@ public:
     // 缺少 Camera 或视口大小无效时返回 false。
     bool LoadCamera(Camera& camera, int W, int H) const;
 
-    // 按名称创建 Lambert、ConductorSpecular 或 DielectricSpecular 材质；必须在 LoadSceneObjects 之前调用。
+    // 支持 Lambert、ConductorSpecular、DielectricSpecular 和 OrenNayar。
+    // 必须在 LoadSceneObjects 之前调用。
     // 未知类型或缺少名称、类型的材质跳过。
     bool LoadMaterials(Scene& scene) const;
 

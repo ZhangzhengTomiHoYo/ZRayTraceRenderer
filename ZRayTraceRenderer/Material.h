@@ -79,3 +79,14 @@ private:
 	Color mTransmissionColor;
 	static float Fresnel(float eta_i, float eta_t, float cos_i, float cos_t);
 };
+
+class OrenNayarMaterial : public Material
+{
+public:
+	OrenNayarMaterial(Color albedo, float sigma) : mAlbedo(albedo), mSigma(sigma) {}
+	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+private:
+	Color mAlbedo;
+	float mSigma;
+};

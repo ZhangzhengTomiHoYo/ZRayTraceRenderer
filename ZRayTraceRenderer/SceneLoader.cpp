@@ -136,6 +136,12 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 				Color transmissionColor = ParseVector3f(GetChildText(pMatElem, "TransmissionColor"));
 				pScene->CreateMatrial<DielectrricSpecularMaterial>(name, eta, transmissionColor);
 			}
+			else if (type == "OrenNayar")
+			{
+				Color albedo = ParseVector3f(GetChildText(pMatElem, "Albedo"));
+				float roughness = GetChildFloat(pMatElem, "Sigma", 0.0f);
+				pScene->CreateMatrial<OrenNayarMaterial>(name, albedo, roughness);
+			}
 		}
 	}
 
