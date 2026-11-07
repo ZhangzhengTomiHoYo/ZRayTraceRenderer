@@ -166,3 +166,54 @@ Vector3f OrenNayarMaterial::SampleWi(const Vector3f& wo, float& pdf) const
 
     return wi;
 }
+
+Color TorranceSparrowMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
+{
+    static const float epsilon = 1e-5f;
+    if (wo.z <= epsilon || wi.z <= epsilon)
+        return Color(0);
+
+    Vector3f wh = glm::normalize(wi + wo);
+
+    // D:
+    float D = (mExponent + 2) * std::pow(wh.z, mExponent) / (2 * PI);
+
+    // G:
+    float deno = std::max(epsilon, glm::dot(wo, wh));
+    float G = std::min(1.0f, std::min(2 * wh.z * wo.z / deno, 2 * wh.z * wi.z / deno));
+
+    // F:
+    float cosTheta = std::max(1e-5f, glm::dot(wh, wi));
+    Color k = mAbsorptionCoef;
+    Color r1 = ((mEta * mEta + k * k) * cosTheta * cosTheta - 2.0f * mEta * cosTheta + 1.0f)
+        / ((mEta * mEta + k * k) * cosTheta * cosTheta + 2.0f * mEta * cosTheta + 1.0f);
+
+    Color r2 = (mEta * mEta + k * k - 2.0f * mEta * cosTheta + cosTheta * cosTheta)
+        / (mEta * mEta + k * k + 2.0f * mEta * cosTheta + cosTheta * cosTheta);
+    Color F = (r1 + r2) * 0.5f;
+
+    return mReflectionColor * D * F * G / (4 * wo.z * wi.z);
+}
+
+Vector3f TorranceSparrowMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+{
+    float e1 = Random01();
+    float e2 = Random01();
+
+    float cos_theta_h = std::pow(e1, 1.0f / (mExponent + 1));
+    float sin_theta_h = std::sqrt(std::max(0.0f, 1 - cos_theta_h * cos_theta_h));
+    float phi_h = 2 * PI * e2;
+
+    Vector3f wh;
+    wh.x = sin_theta_h * cos(phi_h);
+    wh.y = sin_theta_h * sin(phi_h);
+    wh.z = cos_theta_h;
+
+    Vector3f wi = 2 * glm::dot(wo, wh) * wh - wo;
+
+    float pdf_wh = (mExponent + 1) * std::pow(cos_theta_h, mExponent) / (2 * PI);
+
+    pdf = pdf_wh / std::max(1e-5f, 4 * glm::dot(wo, wh));
+
+    return wi;
+}

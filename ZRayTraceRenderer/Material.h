@@ -90,3 +90,20 @@ private:
 	Color mAlbedo;
 	float mSigma;
 };
+
+// Torrance-Sparrow材质：
+class TorranceSparrowMaterial : public Material
+{
+public:
+	TorranceSparrowMaterial(float exponent, const Color& eta, const Color& absorptionCoef, const Color& reflectionColor)
+		: mExponent(exponent), mEta(eta), mAbsorptionCoef(absorptionCoef), mReflectionColor(reflectionColor) {
+	}
+
+	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+private:
+	float mExponent;
+	Color mEta;
+	Color mAbsorptionCoef;
+	Color mReflectionColor;
+};

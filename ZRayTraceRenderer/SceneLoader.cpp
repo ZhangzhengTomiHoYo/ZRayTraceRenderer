@@ -142,6 +142,14 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 				float roughness = GetChildFloat(pMatElem, "Sigma", 0.0f);
 				pScene->CreateMatrial<OrenNayarMaterial>(name, albedo, roughness);
 			}
+			else if (type == "TorranceSparrow")
+			{
+				float exponent = GetChildFloat(pMatElem, "Exponent", 1.0f);
+				Color eta = ParseVector3f(GetChildText(pMatElem, "Eta"));
+				Color absorptionCoef = ParseVector3f(GetChildText(pMatElem, "AbsorptionCoef"));
+				Color reflectionColor = ParseVector3f(GetChildText(pMatElem, "ReflectionColor"));
+				pScene->CreateMatrial<TorranceSparrowMaterial>(name, exponent, eta, absorptionCoef, reflectionColor);
+			}
 		}
 	}
 
