@@ -9,5 +9,6 @@ public:
 	virtual void Sample(Vector3f& p, Vector3f& normal, float& pdf) const override;
 private:
 	float mRadius;
+	float uv;
 };
 

@@ -29,6 +29,16 @@ bool Disk::Intersect(Ray& ray, Intersection& isect) const
 		return false;
 	}
 
+	// 圆盘uv
+	float phi = std::atan2f(p.y, p.x);
+	if (phi < 0)
+	{
+		phi += 2.0f * PI;
+	}
+
+	isect.uv.x = phi * INV_PI * 0.5f;
+	isect.uv.y = glm::length(p) / mRadius;
+
 	isect.position = Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(p, 1.0));
 	isect.normal = glm::normalize(Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(0,0,1,0)));
 	isect.t = t;

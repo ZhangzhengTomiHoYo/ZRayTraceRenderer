@@ -1,15 +1,18 @@
 #include "Triangle.h"
 
-Triangle::Triangle(SceneObject* pSceneObject, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2) : Primitive(pSceneObject)
+Triangle::Triangle(SceneObject* pSceneObject, const Vector3f postions[], const Vector2f uvs[]) : Primitive(pSceneObject)
 {
 	Matrix4x4 worldMatrix = pSceneObject->GetObejctToWorld();
 
-	mVertices[0] = Vector3f(worldMatrix * Vector4f(v0, 1.0));
-	mVertices[1] = Vector3f(worldMatrix * Vector4f(v1, 1.0));
-	mVertices[2] = Vector3f(worldMatrix * Vector4f(v2, 1.0));
+	// 三角形uv
+	for (int i = 0; i < 3; i++)
+	{
+		mPositions[i] = Vector3f(worldMatrix * Vector4f(postions[i], 1.0));
+		mTexCoords[i] = uvs[i];
+	}
 
-	Vector3f edge1 = mVertices[1] - mVertices[0];
-	Vector3f edge2 = mVertices[2] - mVertices[1];
+	Vector3f edge1 = mPositions[1] - mPositions[0];
+	Vector3f edge2 = mPositions[2] - mPositions[1];
 	mNormal = glm::normalize(glm::cross(edge1, edge2));
 	mArea = 0.5f * glm::length(glm::cross(edge1, edge2));
 
@@ -23,9 +26,9 @@ bool Triangle::Intersect(Ray& ray, Intersection& isect) const
 	// 下方公式 为 使用克莱姆法则求解线性方程组所得
 	// 并合并了重复的计算 以减少计算量
 
-	Vector3f p0 = mVertices[0];
-	Vector3f p1 = mVertices[1];
-	Vector3f p2 = mVertices[2];
+	Vector3f p0 = mPositions[0];
+	Vector3f p1 = mPositions[1];
+	Vector3f p2 = mPositions[2];
 
 	Vector3f e1 = p1 - p0;
 	Vector3f e2 = p2 - p0;
@@ -59,6 +62,7 @@ bool Triangle::Intersect(Ray& ray, Intersection& isect) const
 
 	isect.position = ray.o + t * ray.d;
 	isect.normal = mNormal;
+	isect.uv = b0 * mTexCoords[0] + b1 * mTexCoords[1] + b2 * mTexCoords[2];
 	isect.t = t;
 
 	return true;
@@ -66,7 +70,7 @@ bool Triangle::Intersect(Ray& ray, Intersection& isect) const
 
 void Triangle::Sample(Vector3f& p, Vector3f& normal, float& pdf) const
 {
-	p = UniformSampleTriangle(mVertices[0], mVertices[1], mVertices[2]);
+	p = UniformSampleTriangle(mPositions[0], mPositions[1], mPositions[2]);
 	normal = mNormal;
 	pdf = 1.0f / mArea;
 }

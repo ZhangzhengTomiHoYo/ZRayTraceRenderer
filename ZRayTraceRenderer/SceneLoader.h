@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "tinyxml2.h"
+#include <string>
 
 class Camera;
 class Scene;
@@ -20,12 +21,14 @@ public:
     // 支持 Lambert、ConductorSpecular、DielectricSpecular、OrenNayar 和 TorranceSparrow。
     // 必须在 LoadSceneObjects 之前调用。
     // 未知类型或缺少名称、类型的材质跳过。
+    // AlbedoMap 从 XML 所在目录的 texture 子目录加载。
     bool LoadMaterials(Scene& scene) const;
 
     // 向现有 Scene 追加对象和图元，Rotation 使用角度。
     // Material 按名称查找；找不到时不设置材质。Emissive 设置对象自发光。
     // 缺少 Transform 的对象、缺少三个 Vertex 的三角形跳过。
     // 图元按 Sphere、Disk、Triangle 分组加载；自发光对象注册为面光源。
+    // Vertex 可包含 x, y, z, u, v，旧场景缺省的 UV 为零。
     bool LoadSceneObjects(Scene& scene) const;
 
     // 从 Lights 节点追加 DirectionalLight、PointLight 和 SpotLight。
@@ -35,4 +38,5 @@ public:
 
 private:
     mutable tinyxml2::XMLDocument mDocument;
+    std::string mFilePath;
 };

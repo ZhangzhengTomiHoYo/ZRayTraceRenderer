@@ -160,6 +160,7 @@
     <ClCompile Include="SceneLoader.cpp" />
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="tinyxml2.cpp" />
     <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
@@ -176,6 +177,8 @@
     <ClInclude Include="SceneLoader.h" />
     <ClInclude Include="SceneObject.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="tinyxml2.h" />
     <ClInclude Include="Triangle.h" />
   </ItemGroup>
@@ -191,6 +194,25 @@
     <None Include="scenes\scene14.xml" />
     <None Include="scenes\scene15_1.xml" />
     <None Include="scenes\scene15_2.xml" />
+    <None Include="scenes\scene16_2.xml" />
+    <None Include="scenes\texture\brick.png" />
+    <None Include="scenes\texture\lady.png" />
+    <None Include="scenes\texture\Metal058C_1K-PNG_Color.png" />
+    <None Include="scenes\texture\Metal058C_1K-PNG_Metalness.png" />
+    <None Include="scenes\texture\Metal058C_1K-PNG_NormalDX.png" />
+    <None Include="scenes\texture\Metal058C_1K-PNG_Roughness.png" />
+    <None Include="scenes\texture\painted_cement_albedo.png" />
+    <None Include="scenes\texture\painted_cement_normal.png" />
+    <None Include="scenes\texture\tile_albedo.png" />
+    <None Include="scenes\texture\tile_normal.png" />
+    <None Include="scenes\texture\Tiles133D_1K-PNG_Color.png" />
+    <None Include="scenes\texture\Tiles133D_1K-PNG_NormalDX.png" />
+    <None Include="scenes\texture\Tiles133D_1K-PNG_Roughness.png" />
+    <None Include="scenes\texture\wood_albedo.png" />
+    <None Include="scenes\texture\wood_normal.png" />
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_Color.png" />
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_NormalDX.png" />
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_Roughness.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -14,6 +14,10 @@ Scene::~Scene()
     {
         delete pair.second;
     }
+	for (auto& pair : mTextures)
+	{
+		delete pair.second;
+	}
 }
 
 SceneObject* Scene::CreateSceneObject(const Vector3f& position, const Vector3f& euler, float scale)
@@ -21,6 +25,21 @@ SceneObject* Scene::CreateSceneObject(const Vector3f& position, const Vector3f& 
     SceneObject* pSceneObject = new SceneObject(position, euler, scale);
     mSceneObjects.push_back(pSceneObject);
     return pSceneObject;
+}
+
+Texture* Scene::GetOrCreateTexture(const std::string& filePath)
+{
+	if (mTextures.find(filePath) != mTextures.end())
+	{
+		return mTextures[filePath];
+	}
+
+	Texture* pTexture = Texture::CreateFromFile(filePath);
+	if (pTexture == nullptr)
+		return nullptr;
+
+	mTextures[filePath] = pTexture;
+	return pTexture;
 }
 
 SceneObject* Scene::Intersect(Ray& ray, Intersection& isect)

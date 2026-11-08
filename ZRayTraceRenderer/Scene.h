@@ -7,6 +7,7 @@
 #include "SceneLoader.h"
 #include "Light.h"
 #include "Material.h"
+#include "Texture.h"
 
 class Scene
 {
@@ -37,6 +38,8 @@ public:
 		return material;
 	}
 
+	Texture* GetOrCreateTexture(const std::string& filePath);
+
 	const std::vector<Light*>& GetLights() const { return mLights; }
 	const std::map<std::string, Material*>& GetMaterials() const { return mMatrials; }
 
@@ -45,5 +48,6 @@ private:
 	std::vector<SceneObject*> mSceneObjects;
 	std::vector<Light*> mLights;
 	std::map<std::string, Material*> mMatrials;
+	std::map<std::string, Texture*> mTextures;
 };
 

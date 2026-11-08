@@ -35,6 +35,18 @@ bool Sphere::Intersect(Ray& ray, Intersection& isect) const
 	// 求交点
 	Vector3f p = localRay.o + t * localRay.d;
 	Vector3f n = glm::normalize(p);
+
+	// 球体uv
+	float theta = std::acosf(n.z);
+	float phi = std::atan2f(p.y, p.x);  // [-pi,pi]
+	if (phi < 0)
+	{
+		phi += 2 * PI; // (0, 2pi)
+	}
+
+	isect.uv.x = phi * INV_PI * 0.5f;
+	isect.uv.y = theta * INV_PI;
+
 	isect.position = Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(p, 1.0));
 	isect.normal = glm::normalize(Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(n, 0.0)));
 	isect.t = t;

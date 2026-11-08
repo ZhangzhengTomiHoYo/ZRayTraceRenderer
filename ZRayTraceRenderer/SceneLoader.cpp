@@ -10,6 +10,7 @@
 #include "tinyxml2.h"
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
@@ -24,6 +25,50 @@ static Vector3f ParseVector3f(const char* str)
 		v = Vector3f(0.0f);
 	}
 	return v;
+}
+
+// 将str中的字符串解析成浮点数数组，读取顶点的位置和UV。
+// 返回实际解析出来的浮点数个数，最多读取五个数。
+static int ParseFloatArray(const char* str, float arr[])
+{
+	if (!str || !arr)
+		return 0;
+
+	int count = 0;
+	const char* p = str;
+
+	while (count < 5)
+	{
+		// 跳过分隔符（空白、逗号）
+		while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n' || *p == ',')
+			++p;
+
+		if (*p == '\0')
+			break;
+
+		char* pEnd = nullptr;
+		float value = std::strtof(p, &pEnd);
+
+		// 当前位置无法解析出数字，说明遇到非法字符，停止解析
+		if (pEnd == p)
+			break;
+
+		arr[count++] = value;
+		p = pEnd;
+	}
+
+	return count;
+}
+
+static void ParseVertex(const char* str, Vector3f& position, Vector2f& uv)
+{
+	float arr[5];
+	int count = ParseFloatArray(str, arr);
+	position.x = (count > 0) ? arr[0] : 0;
+	position.y = (count > 1) ? arr[1] : 0;
+	position.z = (count > 2) ? arr[2] : 0;
+	uv.x = (count > 3) ? arr[3] : 0;
+	uv.y = (count > 4) ? arr[4] : 0;
 }
 
 // 解析 "x, y" 格式的字符串为 Vector2f
@@ -58,13 +103,18 @@ static const char* GetChildText(tinyxml2::XMLElement* parent, const char* childN
 bool SceneLoader::LoadFile(const char* filename)
 {
 	mDocument.Clear();
+	mFilePath.clear();
 	if (!filename || !*filename)
 		return false;
 
 	if (mDocument.LoadFile(filename) != tinyxml2::XML_SUCCESS)
 		return false;
 
-	return mDocument.FirstChildElement("Scene") != nullptr;
+	if (mDocument.FirstChildElement("Scene") == nullptr)
+		return false;
+
+	mFilePath = std::filesystem::absolute(filename).lexically_normal().string();
+	return true;
 }
 
 bool SceneLoader::LoadCamera(Camera& camera, int W, int H) const
@@ -101,6 +151,16 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 
 	Scene* pScene = &scene;
 
+	auto GetOrCreateTexture = [this, pScene](tinyxml2::XMLElement* pMatElem, const char* propertyName)->Texture* {
+		std::string dirPath = std::filesystem::path(mFilePath).parent_path().string();
+		const char* textureFileName = GetChildText(pMatElem, propertyName);
+		if (textureFileName == nullptr)
+			return nullptr;
+
+		std::string textureFilePath = dirPath + "/texture/" + textureFileName;
+		return pScene->GetOrCreateTexture(textureFilePath);
+	};
+
 	// 解析 Materials（必须在 SceneObjects 之前，以便后续按名字引用）
 	tinyxml2::XMLElement* pMaterialsElem = pRoot->FirstChildElement("Materials");
 	if (pMaterialsElem)
@@ -120,7 +180,8 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 			if (type == "Lambert")
 			{
 				Color albedo = ParseVector3f(GetChildText(pMatElem, "Albedo"));
-				pScene->CreateMatrial<LambertMaterial>(name, albedo);
+				Texture* pAlbedoMap = GetOrCreateTexture(pMatElem, "AlbedoMap");
+				pScene->CreateMatrial<LambertMaterial>(name, albedo, pAlbedoMap);
 			}
 			// 后续可在此扩展更多材质类型
 			else if (type == "ConductorSpecular")
@@ -139,8 +200,9 @@ bool SceneLoader::LoadMaterials(Scene& scene) const
 			else if (type == "OrenNayar")
 			{
 				Color albedo = ParseVector3f(GetChildText(pMatElem, "Albedo"));
+				Texture* pAlbedoMap = GetOrCreateTexture(pMatElem, "AlbedoMap");
 				float roughness = GetChildFloat(pMatElem, "Sigma", 0.0f);
-				pScene->CreateMatrial<OrenNayarMaterial>(name, albedo, roughness);
+				pScene->CreateMatrial<OrenNayarMaterial>(name, albedo, pAlbedoMap, roughness);
 			}
 			else if (type == "TorranceSparrow")
 			{
@@ -235,10 +297,13 @@ bool SceneLoader::LoadSceneObjects(Scene& scene) const
 
 					if (pV0 && pV1 && pV2)
 					{
-						Vector3f v0 = ParseVector3f(pV0->GetText());
-						Vector3f v1 = ParseVector3f(pV1->GetText());
-						Vector3f v2 = ParseVector3f(pV2->GetText());
-						pSceneObject->CreatePrimitive<Triangle>(v0, v1, v2);
+						Vector3f positions[3];
+						Vector2f uvs[3];
+
+						ParseVertex(pV0->GetText(), positions[0], uvs[0]);
+						ParseVertex(pV1->GetText(), positions[1], uvs[1]);
+						ParseVertex(pV2->GetText(), positions[2], uvs[2]);
+						pSceneObject->CreatePrimitive<Triangle>(positions, uvs);
 					}
 				}
 			}

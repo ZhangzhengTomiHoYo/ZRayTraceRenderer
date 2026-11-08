@@ -1,6 +1,6 @@
 #include "Material.h"
 
-Color DielectrricSpecularMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
+Color DielectrricSpecularMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const
 {
     float cos_i = fabs(wi.z);
     float eta_i, eta_t;
@@ -80,6 +80,20 @@ float DielectrricSpecularMaterial::Fresnel(float eta_i, float eta_t, float cos_i
     return 0.5f * (r1 * r1 + r2 * r2);
 }
 
+Color LambertMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const
+{
+    if (wo.z <= 0 || wi.z <= 0)
+    {
+        return Color(0);
+    }
+    Vector3f albedo = mAlbedo;
+    if (m_pAlbedoMap != nullptr)
+    {
+        albedo *= m_pAlbedoMap->Sample<Color>(uv);
+    }
+    return albedo * INV_PI;
+}
+
 Vector3f LambertMaterial::SampleWi(const Vector3f& wo, float& pdf) const
 {
     float e1 = Random01();
@@ -107,7 +121,7 @@ Vector3f ConductorSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) con
     return wi;
 }
 
-Color OrenNayarMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
+Color OrenNayarMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const
 {
     // 不计算物体背面
     if (wo.z <= 0.0f || wi.z <= 0.0f)
@@ -141,7 +155,13 @@ Color OrenNayarMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
     // cos(phi_i - phi_o)
     float cos_delta_phi = cos_phi_i * cos_phi_o + sin_phi_i * sin_phi_o;
 
-    return mAlbedo * INV_PI * (A + B * glm::max(0.0f, cos_delta_phi) * sin_alpha * tan_beta);
+    Vector3f albedo = mAlbedo;
+    if (m_pAlbedoMap != nullptr)
+    {
+        albedo *= m_pAlbedoMap->Sample<Color>(uv);
+    }
+
+    return albedo * INV_PI * (A + B * glm::max(0.0f, cos_delta_phi) * sin_alpha * tan_beta);
 }
 
 Vector3f OrenNayarMaterial::SampleWi(const Vector3f& wo, float& pdf) const
@@ -167,7 +187,7 @@ Vector3f OrenNayarMaterial::SampleWi(const Vector3f& wo, float& pdf) const
     return wi;
 }
 
-Color TorranceSparrowMaterial::BRDF(const Vector3f& wo, const Vector3f& wi) const
+Color TorranceSparrowMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const
 {
     static const float epsilon = 1e-5f;
     if (wo.z <= epsilon || wi.z <= epsilon)

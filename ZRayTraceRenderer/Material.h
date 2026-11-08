@@ -1,10 +1,11 @@
 #pragma once
 #include "Ray.h"
+#include "Texture.h"
 
 class Material
 {
 public:
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const = 0;
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const = 0;
 	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const { return Color(0); }
 	virtual bool IsSpecular() const { return false; }
 	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const { return false; }
@@ -16,17 +17,15 @@ public:
 class LambertMaterial : public Material
 {
 public:
-	LambertMaterial(const Color& albedo) : mAlbedo(albedo) {};
+	LambertMaterial(const Color& albedo, Texture* pAlbedo) : mAlbedo(albedo), m_pAlbedoMap(pAlbedo) {};
 
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override
-	{
-		return mAlbedo * INV_PI;
-	}
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
 
 	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
 
 private:
 	Color mAlbedo;
+	Texture* m_pAlbedoMap = nullptr;
 };
 
 class ConductorSpecularMaterial : public Material
@@ -34,7 +33,7 @@ class ConductorSpecularMaterial : public Material
 public:
 	ConductorSpecularMaterial(const Color& eta, const Color& absorptionCoeff, const Color& reflectionColor) : mEta(eta), mAbsorptionCoef(absorptionCoeff), mReflectionColor(reflectionColor) {}
 	virtual bool IsSpecular() const override { return true; }
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override
 	{
 		// 看看 入射出射 是否关于法向量轴对称   wi wo 都是局部坐标系的
 		if (!(fabs(wo.x + wi.x) < 1e-4f && fabs(wo.y + wi.y) < 1e-4f && fabs(wo.z - wi.z) < 1e-4f))
@@ -68,7 +67,7 @@ public:
 	DielectrricSpecularMaterial(float eta, Color transmissionColor) : mEta(eta), mTransmissionColor(transmissionColor){}
 	virtual bool IsSpecular() const { return true; }
 
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
 	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const override;
 
 	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const override;
@@ -83,11 +82,12 @@ private:
 class OrenNayarMaterial : public Material
 {
 public:
-	OrenNayarMaterial(Color albedo, float sigma) : mAlbedo(albedo), mSigma(sigma) {}
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	OrenNayarMaterial(Color albedo, Texture* pAlbedo, float sigma) : mAlbedo(albedo), m_pAlbedoMap(pAlbedo), mSigma(sigma) {}
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
 	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
 private:
 	Color mAlbedo;
+	Texture* m_pAlbedoMap = nullptr;
 	float mSigma;
 };
 
@@ -99,7 +99,7 @@ public:
 		: mExponent(exponent), mEta(eta), mAbsorptionCoef(absorptionCoef), mReflectionColor(reflectionColor) {
 	}
 
-	virtual Color BRDF(const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
 	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
 private:
 	float mExponent;

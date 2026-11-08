@@ -54,6 +54,9 @@
     <ClCompile Include="Material.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.h">
@@ -98,10 +101,19 @@
     <ClInclude Include="Material.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scenes">
       <UniqueIdentifier>{E9177226-EB86-4B45-A90F-D507DC3C0C5A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scenes\texture">
+      <UniqueIdentifier>{B7953C5D-B55B-4D1C-851F-EC2A03E1B56C}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +149,63 @@
     </None>
     <None Include="scenes\scene15_2.xml">
       <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene16_2.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\texture\brick.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\lady.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Metal058C_1K-PNG_Color.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Metal058C_1K-PNG_Metalness.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Metal058C_1K-PNG_NormalDX.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Metal058C_1K-PNG_Roughness.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\painted_cement_albedo.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\painted_cement_normal.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\tile_albedo.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\tile_normal.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Tiles133D_1K-PNG_Color.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Tiles133D_1K-PNG_NormalDX.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\Tiles133D_1K-PNG_Roughness.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\wood_albedo.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\wood_normal.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_Color.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_NormalDX.png">
+      <Filter>scenes\texture</Filter>
+    </None>
+    <None Include="scenes\texture\WoodFloor069_1K-PNG_Roughness.png">
+      <Filter>scenes\texture</Filter>
     </None>
   </ItemGroup>
 </Project>
