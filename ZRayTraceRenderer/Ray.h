@@ -27,6 +27,7 @@ struct Intersection
 {
 	Vector3f position; // 交点位置
 	Vector3f normal;   // 交点法线
+	Vector3f tangent;  // 交点处的切线方向
 	Vector2f uv;       // 交点处的uv
 	float t;           // 射线参数t，即射线原点到交点的距离
 };

@@ -5,7 +5,7 @@
 int main() {
     std::cout << "Hello, Ray Trace!";
 
-    Renderer renderer("scenes/scene16_2.xml", 3, 10, 1920, 1080);
+    Renderer renderer("scenes/scene17.xml", 3, 10, 1920, 1080);
     renderer.Run();
 
     return 0;

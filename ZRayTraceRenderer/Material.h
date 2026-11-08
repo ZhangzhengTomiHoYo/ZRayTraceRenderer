@@ -12,6 +12,16 @@ public:
 	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const { return Vector3f(0); };
 
 	virtual ~Material() = default;
+
+	// get / set
+	void SetNormalMap(Texture* pNormalMap) { m_pNormalMap = pNormalMap; }
+	void SetBumpScale(float bumpScale) { mBumpScale = bumpScale; }
+	Texture* GetNormalMap() const { return m_pNormalMap; }
+	const float GetBumpScale() const { return mBumpScale; }
+
+private:
+	Texture* m_pNormalMap = nullptr;
+	float    mBumpScale   = 1.0f;
 };
 
 class LambertMaterial : public Material

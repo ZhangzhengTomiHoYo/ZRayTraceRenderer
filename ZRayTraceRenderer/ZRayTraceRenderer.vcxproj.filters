@@ -153,6 +153,9 @@
     <None Include="scenes\scene16_2.xml">
       <Filter>scenes</Filter>
     </None>
+    <None Include="scenes\scene17.xml">
+      <Filter>scenes</Filter>
+    </None>
     <None Include="scenes\texture\brick.png">
       <Filter>scenes\texture</Filter>
     </None>

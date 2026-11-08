@@ -21,7 +21,7 @@ public:
     // 支持 Lambert、ConductorSpecular、DielectricSpecular、OrenNayar 和 TorranceSparrow。
     // 必须在 LoadSceneObjects 之前调用。
     // 未知类型或缺少名称、类型的材质跳过。
-    // AlbedoMap 从 XML 所在目录的 texture 子目录加载。
+    // AlbedoMap、NormalMap 从 XML 所在目录的 texture 子目录加载；BumpScale 默认 1。
     bool LoadMaterials(Scene& scene) const;
 
     // 向现有 Scene 追加对象和图元，Rotation 使用角度。

@@ -132,6 +132,20 @@ Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
 
     Color Lo(0, 0, 0);
 
+    Matrix3x3 TBN = makeCoordinateSystem(isect.normal, isect.tangent);
+
+    Vector3f shadingNormal = isect.normal;
+    if (pMaterial->GetNormalMap())
+    {
+        float bumpScale = pMaterial->GetBumpScale();
+        Vector3f n = pMaterial->GetNormalMap()->Sample<Color>(isect.uv) * 2.0f - 1.0f;
+        n = glm::mix(Vector3f(0, 0, 1), n, bumpScale);
+        n = glm::normalize(n);
+
+        // 从TBN空间转到世界空间
+        shadingNormal = TBN * n;
+    }
+
     // 自发光
     // 多数游戏引擎放在material上 但本项目放在sceneobject上
     // 因为一个物体有很多primitive 有很多子material 有很多自发光
@@ -165,7 +179,9 @@ Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
                 continue;
             }
 
-            float cosTheta = glm::dot(isect.normal, shadowRay.d);
+            //float cosTheta = glm::dot(isect.normal, shadowRay.d);
+            // 变成着色法线和 的数量积
+            float cosTheta = glm::dot(shadingNormal, shadowRay.d);
             Vector3f wi = worldToLocal * shadowRay.d;
             Color brdf = pMaterial->BRDF(isect.uv, wo, wi);
             Lo += brdf * Li * glm::max(cosTheta, 0.0f) / glm::max(1e-5f, pdf);
@@ -183,8 +199,15 @@ Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
         r.d = localToWorld * wi;
         r.o = isect.position;
         r.mint = 1e-3f;
-        Color Li = GetRadiance(r, depth + 1, pMaterial->IsSpecular());
-        Lo += brdf * Li * fabs(wi.z) / glm::max(1e-5f, pdf);
+
+        // 使用着色法线
+        float cosTheta = glm::dot(shadingNormal, r.d);
+        // 同号 也就是说 着色法线 和 wi与几何法线 在同一个方向的表面
+        if (wi.z * cosTheta > 0)
+        {
+            Color Li = GetRadiance(r, depth + 1, pMaterial->IsSpecular());
+            Lo += brdf * Li * std::fabs(cosTheta) / glm::max(1e-5f, pdf);
+        }
     }
     // 折射
     Vector3f wt;

@@ -95,6 +95,18 @@ inline Matrix3x3 makeCoordinateSystem(const Vector3f& w)
 	return Matrix3x3(u, v, w); // 列主序
 }
 
+// TBN切线空间到世界空间的转换矩阵
+inline Matrix3x3 makeCoordinateSystem(Vector3f& n, Vector3f& t)
+{
+	Vector3f b = glm::cross(n, t);
+	t = glm::cross(b, n);
+
+	b = glm::normalize(b);
+	t = glm::normalize(t);
+
+	return Matrix3x3(t, b, n);
+}
+
 inline float Random01()
 {
 	thread_local std::mt19937 gen(std::random_device{}());

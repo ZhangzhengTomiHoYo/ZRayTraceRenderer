@@ -12,6 +12,7 @@ private:
 	Vector3f mPositions[3];
 	Vector2f mTexCoords[3];
 	Vector3f mNormal;
+	Vector3f mTangent;           // 三角形的切线方向
 	float mArea;
 };
 

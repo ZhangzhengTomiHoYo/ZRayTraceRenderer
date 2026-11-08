@@ -43,6 +43,11 @@ bool Disk::Intersect(Ray& ray, Intersection& isect) const
 	isect.normal = glm::normalize(Vector3f(m_pSceneObejct->GetObejctToWorld() * Vector4f(0,0,1,0)));
 	isect.t = t;
 
+	// dp/du
+	Vector3f dpdu(-p.y, p.x, 0.0f);
+	isect.tangent = m_pSceneObejct->GetObejctToWorld() * Vector4f(dpdu, 0.0f);
+	isect.tangent = glm::normalize(isect.tangent);
+
 	return true;
 }
 
