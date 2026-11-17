@@ -196,6 +196,7 @@
     <None Include="scenes\scene15_2.xml" />
     <None Include="scenes\scene16_2.xml" />
     <None Include="scenes\scene17.xml" />
+    <None Include="scenes\scene18.xml" />
     <None Include="scenes\texture\brick.png" />
     <None Include="scenes\texture\lady.png" />
     <None Include="scenes\texture\Metal058C_1K-PNG_Color.png" />

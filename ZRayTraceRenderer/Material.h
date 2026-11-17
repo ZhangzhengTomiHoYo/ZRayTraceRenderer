@@ -9,7 +9,7 @@ public:
 	virtual Color BTDF(const Vector3f& wo, const Vector3f& wi) const { return Color(0); }
 	virtual bool IsSpecular() const { return false; }
 	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const { return false; }
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const { return Vector3f(0); };
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const { return Vector3f(0); };
 
 	virtual ~Material() = default;
 
@@ -31,7 +31,7 @@ public:
 
 	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
 
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
 
 private:
 	Color mAlbedo;
@@ -62,7 +62,7 @@ public:
 		return Fr * mReflectionColor / std::max(fabs(cosTheta), 1e-4f);
 	}
 
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
 
 private:
 	Color mEta;              // 折射率
@@ -82,7 +82,7 @@ public:
 
 	virtual bool SampleWt(const Vector3f& wo, Vector3f& wt) const override;
 
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
 private:
 	float mEta;
 	Color mTransmissionColor;
@@ -94,7 +94,7 @@ class OrenNayarMaterial : public Material
 public:
 	OrenNayarMaterial(Color albedo, Texture* pAlbedo, float sigma) : mAlbedo(albedo), m_pAlbedoMap(pAlbedo), mSigma(sigma) {}
 	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
 private:
 	Color mAlbedo;
 	Texture* m_pAlbedoMap = nullptr;
@@ -110,10 +110,33 @@ public:
 	}
 
 	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
-	virtual Vector3f SampleWi(const Vector3f& wo, float& pdf) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
 private:
 	float mExponent;
 	Color mEta;
 	Color mAbsorptionCoef;
 	Color mReflectionColor;
+};
+
+
+class CookTorranceMaterial : public Material
+{
+public:
+	CookTorranceMaterial(const Color& albedo, Texture* pAlbedoMap, float roughness, Texture* pRoughnessMap, float metallic, Texture* pMetallicMap) :
+	mAlbedo(albedo), m_pAlbedoMap(pAlbedoMap), mRoughness(roughness), m_pRoughnessMap(pRoughnessMap), mMetallic(metallic), m_pMetallicMap(pMetallicMap){}
+	
+	virtual Color BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const override;
+	virtual Vector3f SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const override;
+private:
+	static Color FresnelSchlick(float metallic, const Color& albedo, const Vector3f& wo, const Vector3f& wh);
+	static float DistributionGGX(float roughness, const Vector3f& wh);
+	static float GeometrySmith(float roughness, const Vector3f& wi, const Vector3f& wo);
+	static float GeometrySchlickGGX(float k, float NdotV);
+
+	Color     mAlbedo;
+	Texture*  m_pAlbedoMap     = nullptr;
+	float     mRoughness       = 1.0f;
+	Texture*  m_pRoughnessMap  = nullptr;
+	float     mMetallic        = 0.0f;
+	Texture*  m_pMetallicMap   = nullptr;
 };

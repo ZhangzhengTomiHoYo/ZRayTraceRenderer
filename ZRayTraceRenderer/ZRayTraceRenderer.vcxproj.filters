@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="scenes\mesh">
+      <UniqueIdentifier>{cc56a308-108a-4c87-9b27-5cc7e18e3008}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -154,6 +157,9 @@
       <Filter>scenes</Filter>
     </None>
     <None Include="scenes\scene17.xml">
+      <Filter>scenes</Filter>
+    </None>
+    <None Include="scenes\scene18.xml">
       <Filter>scenes</Filter>
     </None>
     <None Include="scenes\texture\brick.png">

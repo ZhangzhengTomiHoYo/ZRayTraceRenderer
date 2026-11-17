@@ -18,10 +18,11 @@ public:
     // 缺少 Camera 或视口大小无效时返回 false。
     bool LoadCamera(Camera& camera, int W, int H) const;
 
-    // 支持 Lambert、ConductorSpecular、DielectricSpecular、OrenNayar 和 TorranceSparrow。
+    // 支持 Lambert、ConductorSpecular、DielectricSpecular、OrenNayar、TorranceSparrow 和 CookTorrance。
     // 必须在 LoadSceneObjects 之前调用。
     // 未知类型或缺少名称、类型的材质跳过。
-    // AlbedoMap、NormalMap 从 XML 所在目录的 texture 子目录加载；BumpScale 默认 1。
+    // AlbedoMap、NormalMap、RoughnessMap、MetallicMap 从 XML 所在目录的 texture 子目录加载。
+    // CookTorrance 的 Roughness 默认 1、Metallic 默认 0；BumpScale 默认 1。
     bool LoadMaterials(Scene& scene) const;
 
     // 向现有 Scene 追加对象和图元，Rotation 使用角度。

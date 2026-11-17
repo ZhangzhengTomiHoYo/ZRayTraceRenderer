@@ -193,20 +193,25 @@ Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
     // 反射：
     {
         float pdf;
-        Vector3f wi = pMaterial->SampleWi(wo, pdf);
-        Color brdf = pMaterial->BRDF(isect.uv, wo, wi);
-        Ray r;
-        r.d = localToWorld * wi;
-        r.o = isect.position;
-        r.mint = 1e-3f;
-
-        // 使用着色法线
-        float cosTheta = glm::dot(shadingNormal, r.d);
-        // 同号 也就是说 着色法线 和 wi与几何法线 在同一个方向的表面
-        if (wi.z * cosTheta > 0)
+        Vector3f wi = pMaterial->SampleWi(isect.uv, wo, pdf);
+        // 学习 Cook-Torrance材质 时 对GGX材质进行重要性采样 
+        // 有可能造成pdf小于等于0
+        if (pdf > 0)
         {
-            Color Li = GetRadiance(r, depth + 1, pMaterial->IsSpecular());
-            Lo += brdf * Li * std::fabs(cosTheta) / glm::max(1e-5f, pdf);
+            Color brdf = pMaterial->BRDF(isect.uv, wo, wi);
+            Ray r;
+            r.d = localToWorld * wi;
+            r.o = isect.position;
+            r.mint = 1e-3f;
+
+            // 使用着色法线
+            float cosTheta = glm::dot(shadingNormal, r.d);
+            // 同号 也就是说 着色法线 和 wi与几何法线 在同一个方向的表面
+            if (wi.z * cosTheta > 0)
+            {
+                Color Li = GetRadiance(r, depth + 1, pMaterial->IsSpecular());
+                Lo += brdf * Li * std::fabs(cosTheta) / glm::max(1e-5f, pdf);
+            }
         }
     }
     // 折射
@@ -299,7 +304,7 @@ Color Renderer::GetRadiance(Ray& ray, int depth, bool bPrevIsSpecular)
 Color Renderer::RenderPixel(int x, int y)
 {
     // SSAA
-    static const int N = 1000;
+    static const int N = 10;
     Color resultColor{ 0,0,0 };
     for (size_t i = 0; i < N; i++)
     {

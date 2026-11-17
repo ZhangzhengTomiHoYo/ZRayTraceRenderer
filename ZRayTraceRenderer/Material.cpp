@@ -65,7 +65,7 @@ bool DielectrricSpecularMaterial::SampleWt(const Vector3f& wi, Vector3f& wt) con
     return ComputeRefractVector(wi, eta_i, eta_t, wt);
 }
 
-Vector3f DielectrricSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+Vector3f DielectrricSpecularMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
 {
     Vector3f wi(-wo.x, -wo.y, wo.z);
     pdf = 1.0f;
@@ -94,7 +94,7 @@ Color LambertMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi)
     return albedo * INV_PI;
 }
 
-Vector3f LambertMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+Vector3f LambertMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
 {
     float e1 = Random01();
     float e2 = Random01();
@@ -113,7 +113,7 @@ Vector3f LambertMaterial::SampleWi(const Vector3f& wo, float& pdf) const
     return wi;
 }
 
-Vector3f ConductorSpecularMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+Vector3f ConductorSpecularMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
 {
     Vector3f wi(-wo.x, -wo.y, wo.z);
     pdf = 1.0f;
@@ -164,7 +164,7 @@ Color OrenNayarMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& w
     return albedo * INV_PI * (A + B * glm::max(0.0f, cos_delta_phi) * sin_alpha * tan_beta);
 }
 
-Vector3f OrenNayarMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+Vector3f OrenNayarMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
 {
     // ON材质的BRDF十分复杂
     // pdf按 cos_theta_i 进行重要性采样
@@ -215,7 +215,7 @@ Color TorranceSparrowMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vecto
     return mReflectionColor * D * F * G / (4 * wo.z * wi.z);
 }
 
-Vector3f TorranceSparrowMaterial::SampleWi(const Vector3f& wo, float& pdf) const
+Vector3f TorranceSparrowMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
 {
     float e1 = Random01();
     float e2 = Random01();
@@ -236,4 +236,157 @@ Vector3f TorranceSparrowMaterial::SampleWi(const Vector3f& wo, float& pdf) const
     pdf = pdf_wh / std::max(1e-5f, 4 * glm::dot(wo, wh));
 
     return wi;
+}
+
+Color CookTorranceMaterial::BRDF(Vector2f uv, const Vector3f& wo, const Vector3f& wi) const
+{
+    static const float epsilon = 1e-5f;
+    if (wo.z <= epsilon || wi.z <= epsilon)
+        return Color(0);
+
+    Color albedo = mAlbedo;
+    if (m_pAlbedoMap != nullptr)
+        albedo *= m_pAlbedoMap->Sample<Color>(uv);
+
+    float roughness = mRoughness;
+    if (m_pRoughnessMap != nullptr)
+        roughness *= m_pRoughnessMap->Sample<float>(uv);
+
+    // roughness为0 会导致D项完全变为0
+    roughness = glm::clamp(roughness, 0.03f, 1.0f);
+
+    float metallic = mMetallic;
+    if (m_pMetallicMap != nullptr)
+        metallic *= m_pMetallicMap->Sample<float>(uv);
+
+    Vector3f wh = glm::normalize(wi + wo);
+
+    // D:
+    float D = DistributionGGX(roughness, wh);
+
+    // F:
+    Color F = FresnelSchlick(metallic, albedo,wo, wh);
+
+    // G:
+    float G = GeometrySmith(roughness, wi, wo);
+
+    Color Kd = (Color(1.0f) - F) * (1.0f - metallic);
+    return Kd * albedo * INV_PI + D * F * G / (4.0f * wo.z * wi.z);
+
+}
+
+Vector3f CookTorranceMaterial::SampleWi(Vector2f uv, const Vector3f& wo, float& pdf) const
+{
+    // 注意 使用了uv采样roughness
+
+    float roughness = mRoughness;
+    if (m_pRoughnessMap != nullptr)
+        roughness *= m_pRoughnessMap->Sample<float>(uv);
+    roughness = glm::clamp(roughness, 0.03f, 1.0f);
+    float a = roughness * roughness;
+    float a2 = a * a;
+
+    Vector3f wi;
+
+    float e1 = Random01();
+    float e2 = Random01();
+
+    float metallic = mMetallic;
+    if (m_pMetallicMap != nullptr)
+        metallic *= m_pMetallicMap->Sample<float>(uv);
+
+    // 混合概率分布
+    float weight = 0.5f;
+    float pdf1 = 0; 
+    float pdf2 = 0;
+
+    if (Random01() < weight)
+    {
+        // CDF反函数法 算积分得到的结果
+        float cos_theta_h = std::sqrtf(std::max(0.0f, (1 - e1) / std::max(1e-5f, e1 * (a2 - 1.0f) + 1.0f)));
+        float sin_theta_h = std::sqrtf(std::max(0.0f, 1.0f - cos_theta_h * cos_theta_h));
+        float phi_h = 2.0f * PI * e2;
+
+
+        Vector3f wh;
+        wh.x = std::cos(phi_h) * sin_theta_h;
+        wh.y = std::sin(phi_h) * sin_theta_h;
+        wh.z = cos_theta_h;
+
+        float woDotWh = glm::dot(wo, wh);
+        // 有可能小于0 会造成pdf为负
+        if (woDotWh <= 0.0f)
+        {
+            pdf = 0.0f;
+            return Vector3f(0.0f, 0.0f, 0.0f);
+        }
+
+        wi = 2.0f * woDotWh * wh - wo;
+        // 由于引入了roughness  wi有可能采样到平面之下
+        if (wi.z <= 0.0f)
+        {
+            pdf = 0.0f;
+            return wi;
+        }
+
+        // pdf(wh) = D * cos_theta_h;
+        // pdf(wi) = pdf(wh) / 4 * woDotwh
+        pdf2 = DistributionGGX(roughness, wh) * cos_theta_h / (4.0f * woDotWh);
+        pdf1 = wi.z * INV_PI;
+    }
+    else
+    {
+        float e1 = Random01();
+        float e2 = Random01();
+
+        float cosTheta = sqrtf(1.0f - e1);
+        float sinTheta = sqrtf(e1);
+        float phi = 2.0f * PI * e2;
+
+        //Vector3f wi;
+        wi.x = sinTheta * cos(phi);
+        wi.y = sinTheta * sin(phi);
+        wi.z = cosTheta;
+
+        pdf1 = INV_PI * cosTheta;
+
+        Vector3f wh = glm::normalize(wo + wi);
+        float woDotWh = glm::dot(wo, wh);
+        if (woDotWh > 0 && wh.z > 0)
+        {
+            // cos_theta_h 在GGX中是对wh采样得到的 需要改成 wh.z
+            pdf2 = DistributionGGX(roughness, wh) * wh.z / (4.0f * woDotWh);
+        }
+    }
+    pdf = (1.0f - weight) * pdf1 + weight * pdf2;
+    return wi;
+}
+
+Color CookTorranceMaterial::FresnelSchlick(float metallic, const Color& albedo, const Vector3f& wo, const Vector3f& wh)
+{
+    Color F0 = glm::mix(Color(0.04f), albedo, metallic);
+    float cos_h_v = glm::clamp(glm::dot(wo, wh), 0.0f, 1.0f);
+    return F0 + (Color(1.0f) - F0) * std::pow(1.0f - cos_h_v, 5.0f);
+}
+
+float CookTorranceMaterial::DistributionGGX(float roughness, const Vector3f& wh)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float denom = wh.z * wh.z * (a2 - 1.0f) + 1.0f;
+    denom = PI * denom * denom;
+    return a2 / std::max(denom, 1e-8f);
+}
+
+float CookTorranceMaterial::GeometrySmith(float roughness, const Vector3f& wi, const Vector3f& wo)
+{
+    float k = (roughness + 1.0f) * (roughness + 1.0f) / 8.0f;
+    return GeometrySchlickGGX(k, std::abs(wi.z)) * GeometrySchlickGGX(k, std::abs(wo.z));
+}
+
+float CookTorranceMaterial::GeometrySchlickGGX(float k, float NdotV)
+{
+    float nom = NdotV;
+    float denom = NdotV * (1.0f - k) + k;
+    return nom / std::max(denom, 1e-5f);
 }
